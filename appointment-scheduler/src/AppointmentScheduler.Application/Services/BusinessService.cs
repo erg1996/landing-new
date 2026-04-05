@@ -58,6 +58,12 @@ public class BusinessService
         return ToResponse(business);
     }
 
+    public async Task<List<BusinessResponse>> GetAllAsync()
+    {
+        var businesses = await _repository.GetAllAsync();
+        return businesses.Select(ToResponse).ToList();
+    }
+
     private static BusinessResponse ToResponse(Business b) =>
         new(b.Id, b.Name, b.Slug, b.CreatedAt);
 

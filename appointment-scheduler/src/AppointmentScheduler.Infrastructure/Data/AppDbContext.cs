@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<Service> Services => Set<Service>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<WorkingHours> WorkingHours => Set<WorkingHours>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -54,6 +55,19 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => new { e.BusinessId, e.DayOfWeek }).IsUnique();
             entity.HasOne(e => e.Business)
                 .WithMany(b => b.WorkingHours)
+                .HasForeignKey(e => e.BusinessId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(200);
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.Property(e => e.PasswordHash).IsRequired();
+            entity.Property(e => e.FullName).IsRequired().HasMaxLength(200);
+            entity.HasOne(e => e.Business)
+                .WithMany()
                 .HasForeignKey(e => e.BusinessId)
                 .OnDelete(DeleteBehavior.Cascade);
         });

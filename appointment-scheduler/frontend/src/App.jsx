@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { BusinessProvider } from './components/BusinessContext'
+import { AuthProvider, useAuth } from './components/AuthContext'
 import Navbar from './components/Navbar'
 import Dashboard from './pages/Dashboard'
 import BusinessPanel from './pages/BusinessPanel'
@@ -7,12 +8,16 @@ import BookAppointment from './pages/BookAppointment'
 import AppointmentsList from './pages/AppointmentsList'
 import PublicBooking from './pages/PublicBooking'
 import BookingConfirmation from './pages/BookingConfirmation'
+import Login from './pages/Login'
+import Register from './pages/Register'
 
 function Layout() {
   const { pathname } = useLocation()
+  const { auth } = useAuth()
   const isPublicRoute = pathname.startsWith('/book/')
+  const isAuthRoute = pathname === '/login' || pathname === '/register'
 
-  // Public booking pages render without admin shell
+  // Public booking pages — no shell
   if (isPublicRoute) {
     return (
       <Routes>
@@ -20,6 +25,22 @@ function Layout() {
         <Route path="/book/:slug" element={<PublicBooking />} />
       </Routes>
     )
+  }
+
+  // Auth pages — no shell, redirect if logged in
+  if (isAuthRoute) {
+    if (auth) return <Navigate to="/" replace />
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Routes>
+    )
+  }
+
+  // Protected admin routes — redirect to login if not authenticated
+  if (!auth) {
+    return <Navigate to="/login" replace />
   }
 
   return (
@@ -40,9 +61,11 @@ function Layout() {
 export default function App() {
   return (
     <BrowserRouter>
-      <BusinessProvider>
-        <Layout />
-      </BusinessProvider>
+      <AuthProvider>
+        <BusinessProvider>
+          <Layout />
+        </BusinessProvider>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

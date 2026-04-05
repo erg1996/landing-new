@@ -17,6 +17,9 @@ public class BusinessRepository : IBusinessRepository
     public async Task<Business?> GetBySlugAsync(string slug) =>
         await _context.Businesses.FirstOrDefaultAsync(b => b.Slug == slug);
 
+    public async Task<List<Business>> GetAllAsync() =>
+        await _context.Businesses.OrderByDescending(b => b.CreatedAt).ToListAsync();
+
     public async Task AddAsync(Business business) =>
         await _context.Businesses.AddAsync(business);
 

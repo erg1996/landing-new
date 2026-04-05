@@ -32,4 +32,11 @@ public class BusinessController : ControllerBase
         var result = await _service.GetBySlugAsync(slug);
         return Ok(result);
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var results = await _service.GetAllAsync();
+        return Ok(results);
+    }
 }

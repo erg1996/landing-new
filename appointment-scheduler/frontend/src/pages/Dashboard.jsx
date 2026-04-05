@@ -1,8 +1,17 @@
 import { useBusiness } from '../components/BusinessContext'
 import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { getDashboardAnalytics } from '../api/client'
 
 export default function Dashboard() {
   const { business, services, appointments } = useBusiness()
+  const [analytics, setAnalytics] = useState(null)
+
+  useEffect(() => {
+    if (business?.id) {
+      getDashboardAnalytics(business.id).then(setAnalytics).catch(() => {})
+    }
+  }, [business?.id, appointments.length])
 
   if (!business) {
     return (
@@ -33,8 +42,8 @@ export default function Dashboard() {
 
   const stats = [
     { label: 'Servicios Activos', value: services.length, icon: '⚙️', color: 'bg-blue-50 text-blue-700' },
-    { label: 'Citas Totales', value: appointments.length, icon: '📅', color: 'bg-green-50 text-green-700' },
-    { label: 'Citas Hoy', value: todayAppointments.length, icon: '📌', color: 'bg-amber-50 text-amber-700' },
+    { label: 'Citas Totales', value: analytics?.totalAppointments ?? appointments.length, icon: '📅', color: 'bg-green-50 text-green-700' },
+    { label: 'Citas Hoy', value: analytics?.todayAppointments ?? todayAppointments.length, icon: '📌', color: 'bg-amber-50 text-amber-700' },
     { label: 'Próximas', value: upcoming.length, icon: '⏳', color: 'bg-purple-50 text-purple-700' },
   ]
 
@@ -46,6 +55,12 @@ export default function Dashboard() {
       hour: '2-digit',
       minute: '2-digit',
     })
+  }
+
+  const formatHour = (hour) => {
+    const h = hour % 12 || 12
+    const ampm = hour < 12 ? 'AM' : 'PM'
+    return `${h}:00 ${ampm}`
   }
 
   return (
@@ -67,6 +82,38 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {analytics && (analytics.topService || analytics.busiestHour || analytics.quietestHour) && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {analytics.topService && (
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <div className="text-sm text-gray-500 mb-1">Servicio con más citas</div>
+              <div className="text-xl font-bold text-gray-800">{analytics.topService.name}</div>
+              <div className="text-sm text-indigo-600 font-medium mt-1">
+                {analytics.topService.count} cita{analytics.topService.count !== 1 ? 's' : ''}
+              </div>
+            </div>
+          )}
+          {analytics.busiestHour && (
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <div className="text-sm text-gray-500 mb-1">Hora más agendada</div>
+              <div className="text-xl font-bold text-gray-800">{formatHour(analytics.busiestHour.hour)}</div>
+              <div className="text-sm text-green-600 font-medium mt-1">
+                {analytics.busiestHour.count} cita{analytics.busiestHour.count !== 1 ? 's' : ''}
+              </div>
+            </div>
+          )}
+          {analytics.quietestHour && (
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <div className="text-sm text-gray-500 mb-1">Hora menos agendada</div>
+              <div className="text-xl font-bold text-gray-800">{formatHour(analytics.quietestHour.hour)}</div>
+              <div className="text-sm text-amber-600 font-medium mt-1">
+                {analytics.quietestHour.count} cita{analytics.quietestHour.count !== 1 ? 's' : ''}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Próximas Citas</h2>

@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<IServiceRepository, ServiceRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IWorkingHoursRepository, WorkingHoursRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
 
         // Application services
         services.AddScoped<BusinessService>();
@@ -27,6 +28,14 @@ public static class DependencyInjection
         services.AddScoped<WorkingHoursService>();
         services.AddScoped<AvailabilityService>();
         services.AddScoped<AppointmentService>();
+        services.AddScoped<AnalyticsService>();
+        services.AddScoped<AuthService>(sp =>
+        {
+            var userRepo = sp.GetRequiredService<IUserRepository>();
+            var bizRepo = sp.GetRequiredService<IBusinessRepository>();
+            var jwtSecret = configuration["Jwt:Secret"] ?? "SchedulePro-Default-Secret-Key-Change-In-Production-Min32Chars!";
+            return new AuthService(userRepo, bizRepo, jwtSecret);
+        });
 
         return services;
     }

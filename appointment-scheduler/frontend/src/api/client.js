@@ -22,6 +22,8 @@ export const getBusiness = (id) => request(`/api/business/${id}`)
 
 export const getBusinessBySlug = (slug) => request(`/api/business/slug/${slug}`)
 
+export const getAllBusinesses = () => request('/api/business')
+
 // Services
 export const createService = (data) =>
   request('/api/services', { method: 'POST', body: JSON.stringify(data) })
@@ -39,9 +41,20 @@ export const getAvailability = (businessId, date, serviceId) =>
     `/api/availability?businessId=${businessId}&date=${encodeURIComponent(date)}&serviceId=${serviceId}`
   )
 
+// Auth
+export const register = (data) =>
+  request('/api/auth/register', { method: 'POST', body: JSON.stringify(data) })
+
+export const login = (data) =>
+  request('/api/auth/login', { method: 'POST', body: JSON.stringify(data) })
+
 // Appointments
 export const createAppointment = (data) =>
   request('/api/appointments', { method: 'POST', body: JSON.stringify(data) })
 
 export const getAppointments = (businessId) =>
   request(`/api/appointments?businessId=${businessId}`)
+
+// Analytics
+export const getDashboardAnalytics = (businessId) =>
+  request(`/api/analytics/dashboard?businessId=${businessId}`)

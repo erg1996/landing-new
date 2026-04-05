@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useBusiness } from '../components/BusinessContext'
 import {
   createBusiness,
   createService,
   createWorkingHours,
+  getAllBusinesses,
 } from '../api/client'
 
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
@@ -11,9 +12,14 @@ const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Vierne
 export default function BusinessPanel() {
   const { business, setBusiness, services, refreshServices } = useBusiness()
   const [tab, setTab] = useState('info')
+  const [showSwitcher, setShowSwitcher] = useState(false)
 
   if (!business) {
-    return <CreateBusinessForm onCreated={setBusiness} />
+    return <BusinessSelector onSelected={setBusiness} />
+  }
+
+  if (showSwitcher) {
+    return <BusinessSelector onSelected={(b) => { setBusiness(b); setShowSwitcher(false) }} currentId={business.id} />
   }
 
   const tabs = [
@@ -27,8 +33,8 @@ export default function BusinessPanel() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">{business.name}</h1>
         <button
-          onClick={() => setBusiness(null)}
-          className="text-sm text-red-500 hover:text-red-700"
+          onClick={() => setShowSwitcher(true)}
+          className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
         >
           Cambiar negocio
         </button>
@@ -59,6 +65,83 @@ export default function BusinessPanel() {
         />
       )}
       {tab === 'hours' && <WorkingHoursTab businessId={business.id} />}
+    </div>
+  )
+}
+
+function BusinessSelector({ onSelected, currentId }) {
+  const [businesses, setBusinesses] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showCreate, setShowCreate] = useState(false)
+
+  useEffect(() => {
+    loadBusinesses()
+  }, [])
+
+  const loadBusinesses = async () => {
+    try {
+      const data = await getAllBusinesses()
+      setBusinesses(data)
+      if (data.length === 0) setShowCreate(true)
+    } catch {
+      setShowCreate(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return <p className="text-center text-gray-400 py-12">Cargando negocios...</p>
+  }
+
+  if (showCreate) {
+    return (
+      <div>
+        {businesses.length > 0 && (
+          <button
+            onClick={() => setShowCreate(false)}
+            className="text-sm text-indigo-600 hover:underline mb-4"
+          >
+            Ver negocios existentes
+          </button>
+        )}
+        <CreateBusinessForm onCreated={(b) => { onSelected(b); loadBusinesses() }} />
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-md mx-auto py-12">
+      <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Seleccionar Negocio</h1>
+      <div className="space-y-2 mb-6">
+        {businesses.map((b) => (
+          <button
+            key={b.id}
+            onClick={() => onSelected(b)}
+            className={`w-full bg-white border rounded-xl p-4 text-left transition-colors ${
+              b.id === currentId
+                ? 'border-indigo-400 bg-indigo-50'
+                : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+            }`}
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <span className="font-medium text-gray-800">{b.name}</span>
+                <span className="text-gray-400 text-sm ml-2">/{b.slug}</span>
+              </div>
+              {b.id === currentId && (
+                <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">Actual</span>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+      <button
+        onClick={() => setShowCreate(true)}
+        className="w-full border-2 border-dashed border-gray-300 rounded-xl p-4 text-gray-500 hover:border-indigo-400 hover:text-indigo-600 transition-colors text-sm font-medium"
+      >
+        + Crear nuevo negocio
+      </button>
     </div>
   )
 }

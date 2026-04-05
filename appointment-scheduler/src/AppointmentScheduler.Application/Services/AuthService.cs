@@ -1,0 +1,101 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using AppointmentScheduler.Application.DTOs;
+using AppointmentScheduler.Application.Exceptions;
+using AppointmentScheduler.Application.Interfaces;
+using AppointmentScheduler.Domain.Entities;
+using Microsoft.IdentityModel.Tokens;
+
+namespace AppointmentScheduler.Application.Services;
+
+public class AuthService
+{
+    private readonly IUserRepository _userRepository;
+    private readonly IBusinessRepository _businessRepository;
+    private readonly string _jwtSecret;
+
+    public AuthService(IUserRepository userRepository, IBusinessRepository businessRepository, string jwtSecret)
+    {
+        _userRepository = userRepository;
+        _businessRepository = businessRepository;
+        _jwtSecret = jwtSecret;
+    }
+
+    public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
+    {
+        var existing = await _userRepository.GetByEmailAsync(request.Email);
+        if (existing != null)
+            throw new ConflictException("An account with this email already exists.");
+
+        // Create the business
+        var slug = BusinessService.GenerateSlug(request.BusinessName);
+        var existingBiz = await _businessRepository.GetBySlugAsync(slug);
+        if (existingBiz != null)
+            slug = $"{slug}-{Guid.NewGuid().ToString()[..4]}";
+
+        var business = new Business
+        {
+            Id = Guid.NewGuid(),
+            Name = request.BusinessName,
+            Slug = slug,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _businessRepository.AddAsync(business);
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = request.Email.ToLowerInvariant().Trim(),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            FullName = request.FullName,
+            BusinessId = business.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _userRepository.AddAsync(user);
+        await _userRepository.SaveChangesAsync();
+
+        var token = GenerateToken(user);
+        return new AuthResponse(token, user.Id, user.Email, user.FullName, business.Id, business.Name, business.Slug);
+    }
+
+    public async Task<AuthResponse> LoginAsync(LoginRequest request)
+    {
+        var user = await _userRepository.GetByEmailAsync(request.Email.ToLowerInvariant().Trim())
+            ?? throw new NotFoundException("Invalid email or password.");
+
+        if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            throw new NotFoundException("Invalid email or password.");
+
+        var business = await _businessRepository.GetByIdAsync(user.BusinessId)
+            ?? throw new NotFoundException("Business not found.");
+
+        var token = GenerateToken(user);
+        return new AuthResponse(token, user.Id, user.Email, user.FullName, business.Id, business.Name, business.Slug);
+    }
+
+    private string GenerateToken(User user)
+    {
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim("businessId", user.BusinessId.ToString()),
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: "SchedulePro",
+            audience: "SchedulePro",
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(24),
+            signingCredentials: credentials
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+}
