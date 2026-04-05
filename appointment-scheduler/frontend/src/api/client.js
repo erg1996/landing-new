@@ -20,6 +20,8 @@ export const createBusiness = (data) =>
 
 export const getBusiness = (id) => request(`/api/business/${id}`)
 
+export const getBusinessBySlug = (slug) => request(`/api/business/slug/${slug}`)
+
 // Services
 export const createService = (data) =>
   request('/api/services', { method: 'POST', body: JSON.stringify(data) })

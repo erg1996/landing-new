@@ -14,6 +14,7 @@ public static class SeedData
         {
             Id = businessId,
             Name = "Demo Barbershop",
+            Slug = "demo-barbershop",
             CreatedAt = DateTime.UtcNow
         };
 

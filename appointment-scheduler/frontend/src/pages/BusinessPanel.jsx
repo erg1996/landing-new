@@ -111,23 +111,64 @@ function CreateBusinessForm({ onCreated }) {
 }
 
 function BusinessInfo({ business }) {
+  const publicUrl = `${window.location.origin}/book/${business.slug}`
+  const [copied, setCopied] = useState(false)
+
+  const copyLink = async () => {
+    await navigator.clipboard.writeText(publicUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <h2 className="font-semibold text-gray-800 mb-4">Información del Negocio</h2>
-      <div className="space-y-3 text-sm">
-        <div className="flex justify-between py-2 border-b border-gray-100">
-          <span className="text-gray-500">ID</span>
-          <span className="font-mono text-gray-700 text-xs">{business.id}</span>
+    <div className="space-y-6">
+      {/* Public booking link */}
+      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5">
+        <h2 className="font-semibold text-indigo-800 mb-2">Link de Reserva para Clientes</h2>
+        <p className="text-indigo-600 text-sm mb-3">
+          Comparte este link para que tus clientes agenden citas:
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={publicUrl}
+            readOnly
+            className="flex-1 bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm text-gray-700 font-mono"
+          />
+          <button
+            onClick={copyLink}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              copied
+                ? 'bg-green-600 text-white'
+                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+            }`}
+          >
+            {copied ? 'Copiado!' : 'Copiar'}
+          </button>
         </div>
-        <div className="flex justify-between py-2 border-b border-gray-100">
-          <span className="text-gray-500">Nombre</span>
-          <span className="text-gray-800 font-medium">{business.name}</span>
-        </div>
-        <div className="flex justify-between py-2">
-          <span className="text-gray-500">Creado</span>
-          <span className="text-gray-700">
-            {new Date(business.createdAt).toLocaleDateString('es')}
-          </span>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="font-semibold text-gray-800 mb-4">Información del Negocio</h2>
+        <div className="space-y-3 text-sm">
+          <div className="flex justify-between py-2 border-b border-gray-100">
+            <span className="text-gray-500">ID</span>
+            <span className="font-mono text-gray-700 text-xs">{business.id}</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100">
+            <span className="text-gray-500">Nombre</span>
+            <span className="text-gray-800 font-medium">{business.name}</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-gray-100">
+            <span className="text-gray-500">Slug</span>
+            <span className="font-mono text-gray-700">{business.slug}</span>
+          </div>
+          <div className="flex justify-between py-2">
+            <span className="text-gray-500">Creado</span>
+            <span className="text-gray-700">
+              {new Date(business.createdAt).toLocaleDateString('es')}
+            </span>
+          </div>
         </div>
       </div>
     </div>

@@ -25,4 +25,11 @@ public class BusinessController : ControllerBase
         var result = await _service.GetByIdAsync(id);
         return Ok(result);
     }
+
+    [HttpGet("slug/{slug}")]
+    public async Task<IActionResult> GetBySlug(string slug)
+    {
+        var result = await _service.GetBySlugAsync(slug);
+        return Ok(result);
+    }
 }

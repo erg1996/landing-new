@@ -14,6 +14,9 @@ public class BusinessRepository : IBusinessRepository
     public async Task<Business?> GetByIdAsync(Guid id) =>
         await _context.Businesses.FindAsync(id);
 
+    public async Task<Business?> GetBySlugAsync(string slug) =>
+        await _context.Businesses.FirstOrDefaultAsync(b => b.Slug == slug);
+
     public async Task AddAsync(Business business) =>
         await _context.Businesses.AddAsync(business);
 
