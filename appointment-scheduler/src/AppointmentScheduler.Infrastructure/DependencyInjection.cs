@@ -2,6 +2,7 @@ using AppointmentScheduler.Application.Interfaces;
 using AppointmentScheduler.Application.Services;
 using AppointmentScheduler.Infrastructure.Data;
 using AppointmentScheduler.Infrastructure.Repositories;
+using AppointmentScheduler.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IWorkingHoursRepository, WorkingHoursRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IBlockedDateRepository, BlockedDateRepository>();
 
         // Application services
         services.AddScoped<BusinessService>();
@@ -29,6 +31,8 @@ public static class DependencyInjection
         services.AddScoped<AvailabilityService>();
         services.AddScoped<AppointmentService>();
         services.AddScoped<AnalyticsService>();
+        services.AddScoped<BlockedDateService>();
+        services.AddScoped<IEmailService, SmtpEmailService>();
         services.AddScoped<AuthService>(sp =>
         {
             var userRepo = sp.GetRequiredService<IUserRepository>();

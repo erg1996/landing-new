@@ -6,6 +6,7 @@ public class Appointment
     public Guid BusinessId { get; set; }
     public Guid ServiceId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerEmail { get; set; }
     public DateTime AppointmentDate { get; set; }
     public int DurationMinutes { get; set; }
     public DateTime CreatedAt { get; set; }

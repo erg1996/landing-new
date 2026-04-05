@@ -32,8 +32,27 @@ export const getServices = (businessId) =>
   request(`/api/services?businessId=${businessId}`)
 
 // Working Hours
+export const getWorkingHours = (businessId) =>
+  request(`/api/working-hours?businessId=${businessId}`)
+
 export const createWorkingHours = (data) =>
   request('/api/working-hours', { method: 'POST', body: JSON.stringify(data) })
+
+export const updateWorkingHours = (id, data) =>
+  request(`/api/working-hours/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+
+export const deleteWorkingHours = (id) =>
+  request(`/api/working-hours/${id}`, { method: 'DELETE' })
+
+// Blocked Dates
+export const getBlockedDates = (businessId) =>
+  request(`/api/blocked-dates?businessId=${businessId}`)
+
+export const createBlockedDate = (data) =>
+  request('/api/blocked-dates', { method: 'POST', body: JSON.stringify(data) })
+
+export const deleteBlockedDate = (id, businessId) =>
+  request(`/api/blocked-dates/${id}?businessId=${businessId}`, { method: 'DELETE' })
 
 // Availability
 export const getAvailability = (businessId, date, serviceId) =>

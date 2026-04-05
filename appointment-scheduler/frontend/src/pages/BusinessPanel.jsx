@@ -4,6 +4,12 @@ import {
   createBusiness,
   createService,
   createWorkingHours,
+  getWorkingHours,
+  updateWorkingHours,
+  deleteWorkingHours,
+  getBlockedDates,
+  createBlockedDate,
+  deleteBlockedDate,
   getAllBusinesses,
 } from '../api/client'
 
@@ -26,6 +32,7 @@ export default function BusinessPanel() {
     { key: 'info', label: 'Negocio' },
     { key: 'services', label: 'Servicios' },
     { key: 'hours', label: 'Horarios' },
+    { key: 'blocked', label: 'Dias Bloqueados' },
   ]
 
   return (
@@ -65,6 +72,7 @@ export default function BusinessPanel() {
         />
       )}
       {tab === 'hours' && <WorkingHoursTab businessId={business.id} />}
+      {tab === 'blocked' && <BlockedDatesTab businessId={business.id} />}
     </div>
   )
 }
@@ -351,7 +359,29 @@ function WorkingHoursTab({ businessId }) {
   const [end, setEnd] = useState('17:00')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
-  const [saved, setSaved] = useState([])
+  const [hours, setHours] = useState([])
+  const [editingId, setEditingId] = useState(null)
+  const [editStart, setEditStart] = useState('')
+  const [editEnd, setEditEnd] = useState('')
+
+  useEffect(() => {
+    loadHours()
+  }, [businessId])
+
+  const loadHours = async () => {
+    try {
+      const data = await getWorkingHours(businessId)
+      setHours(data)
+    } catch {}
+  }
+
+  const formatTime = (ts) => {
+    // ts comes as "HH:mm:ss" or similar
+    const parts = ts.split(':')
+    return `${parts[0]}:${parts[1]}`
+  }
+
+  const usedDays = hours.map((h) => h.dayOfWeek)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -366,8 +396,8 @@ function WorkingHoursTab({ businessId }) {
         startTime: `${String(sh).padStart(2, '0')}:${String(sm).padStart(2, '0')}:00`,
         endTime: `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}:00`,
       })
-      setSaved((prev) => [...prev, { day: Number(day), start, end }])
       setMessage({ type: 'success', text: `Horario de ${DAY_NAMES[day]} guardado` })
+      loadHours()
     } catch (err) {
       setMessage({ type: 'error', text: err.message })
     } finally {
@@ -375,10 +405,47 @@ function WorkingHoursTab({ businessId }) {
     }
   }
 
+  const handleUpdate = async (id, dayOfWeek) => {
+    setLoading(true)
+    setMessage({ type: '', text: '' })
+    try {
+      const [sh, sm] = editStart.split(':').map(Number)
+      const [eh, em] = editEnd.split(':').map(Number)
+      await updateWorkingHours(id, {
+        businessId,
+        dayOfWeek,
+        startTime: `${String(sh).padStart(2, '0')}:${String(sm).padStart(2, '0')}:00`,
+        endTime: `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}:00`,
+      })
+      setEditingId(null)
+      setMessage({ type: 'success', text: 'Horario actualizado' })
+      loadHours()
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteWorkingHours(id)
+      loadHours()
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message })
+    }
+  }
+
+  const startEdit = (h) => {
+    setEditingId(h.id)
+    setEditStart(formatTime(h.startTime))
+    setEditEnd(formatTime(h.endTime))
+  }
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-800 mb-4">Definir Horario Laboral</h2>
+        <h2 className="font-semibold text-gray-800 mb-4">Agregar Horario Laboral</h2>
         <form onSubmit={handleSubmit} className="flex gap-3 items-end flex-wrap">
           <div className="w-44">
             <label className="block text-sm font-medium text-gray-700 mb-1">Día</label>
@@ -388,8 +455,8 @@ function WorkingHoursTab({ businessId }) {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
             >
               {DAY_NAMES.map((name, i) => (
-                <option key={i} value={i}>
-                  {name}
+                <option key={i} value={i} disabled={usedDays.includes(i)}>
+                  {name} {usedDays.includes(i) ? '(ya configurado)' : ''}
                 </option>
               ))}
             </select>
@@ -414,38 +481,169 @@ function WorkingHoursTab({ businessId }) {
           </div>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || usedDays.includes(Number(day))}
             className="bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
           >
-            {loading ? '...' : 'Guardar'}
+            {loading ? '...' : 'Agregar'}
           </button>
         </form>
         {message.text && (
-          <p
-            className={`text-sm mt-3 ${
-              message.type === 'success' ? 'text-green-600' : 'text-red-500'
-            }`}
-          >
+          <p className={`text-sm mt-3 ${message.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
             {message.text}
           </p>
         )}
       </div>
 
-      {saved.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-gray-800 mb-4">Horarios Guardados</h2>
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="font-semibold text-gray-800 mb-4">Horarios Configurados ({hours.length})</h2>
+        {hours.length === 0 ? (
+          <p className="text-gray-400 text-center py-4">No hay horarios configurados</p>
+        ) : (
           <div className="divide-y divide-gray-100">
-            {saved.map((s, i) => (
-              <div key={i} className="flex items-center justify-between py-3">
-                <span className="font-medium text-gray-800">{DAY_NAMES[s.day]}</span>
-                <span className="text-sm text-gray-500">
-                  {s.start} — {s.end}
-                </span>
+            {hours.map((h) => (
+              <div key={h.id} className="flex items-center justify-between py-3">
+                <span className="font-medium text-gray-800 w-28">{DAY_NAMES[h.dayOfWeek]}</span>
+                {editingId === h.id ? (
+                  <div className="flex items-center gap-2">
+                    <input type="time" value={editStart} onChange={(e) => setEditStart(e.target.value)}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm" />
+                    <span className="text-gray-400">—</span>
+                    <input type="time" value={editEnd} onChange={(e) => setEditEnd(e.target.value)}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm" />
+                    <button onClick={() => handleUpdate(h.id, h.dayOfWeek)}
+                      className="text-green-600 hover:text-green-800 text-sm font-medium">Guardar</button>
+                    <button onClick={() => setEditingId(null)}
+                      className="text-gray-400 hover:text-gray-600 text-sm">Cancelar</button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-500">
+                      {formatTime(h.startTime)} — {formatTime(h.endTime)}
+                    </span>
+                    <button onClick={() => startEdit(h)}
+                      className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Editar</button>
+                    <button onClick={() => handleDelete(h.id)}
+                      className="text-red-500 hover:text-red-700 text-sm font-medium">Eliminar</button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
+    </div>
+  )
+}
+
+function BlockedDatesTab({ businessId }) {
+  const [dates, setDates] = useState([])
+  const [date, setDate] = useState('')
+  const [reason, setReason] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState({ type: '', text: '' })
+
+  useEffect(() => {
+    loadDates()
+  }, [businessId])
+
+  const loadDates = async () => {
+    try {
+      const data = await getBlockedDates(businessId)
+      setDates(data)
+    } catch {}
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!date) return
+    setLoading(true)
+    setMessage({ type: '', text: '' })
+    try {
+      await createBlockedDate({ businessId, date, reason: reason.trim() })
+      setDate('')
+      setReason('')
+      setMessage({ type: 'success', text: 'Fecha bloqueada' })
+      loadDates()
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteBlockedDate(id, businessId)
+      loadDates()
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message })
+    }
+  }
+
+  const today = new Date().toISOString().split('T')[0]
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="font-semibold text-gray-800 mb-2">Bloquear Fecha</h2>
+        <p className="text-sm text-gray-500 mb-4">Bloquea días feriados o cuando no hay servicio. No se mostrarán slots disponibles.</p>
+        <form onSubmit={handleSubmit} className="flex gap-3 items-end flex-wrap">
+          <div className="w-44">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+            <input
+              type="date"
+              value={date}
+              min={today}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+            />
+          </div>
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Motivo (opcional)</label>
+            <input
+              type="text"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Ej: Día feriado, Vacaciones..."
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading || !date}
+            className="bg-red-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
+          >
+            {loading ? '...' : 'Bloquear'}
+          </button>
+        </form>
+        {message.text && (
+          <p className={`text-sm mt-3 ${message.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+            {message.text}
+          </p>
+        )}
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="font-semibold text-gray-800 mb-4">Fechas Bloqueadas ({dates.length})</h2>
+        {dates.length === 0 ? (
+          <p className="text-gray-400 text-center py-4">No hay fechas bloqueadas</p>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {dates.map((d) => (
+              <div key={d.id} className="flex items-center justify-between py-3">
+                <div>
+                  <span className="font-medium text-gray-800">
+                    {new Date(d.date).toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  </span>
+                  {d.reason && <span className="text-gray-400 text-sm ml-2">— {d.reason}</span>}
+                </div>
+                <button onClick={() => handleDelete(d.id)}
+                  className="text-red-500 hover:text-red-700 text-sm font-medium">Eliminar</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -24,6 +24,7 @@ export default function PublicBooking() {
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [customerName, setCustomerName] = useState('')
+  const [customerEmail, setCustomerEmail] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
   const [booking, setBooking] = useState(false)
   const [bookingError, setBookingError] = useState('')
@@ -83,6 +84,7 @@ export default function PublicBooking() {
         businessId: business.id,
         serviceId: selectedService.id,
         customerName: customerName.trim(),
+        customerEmail: customerEmail.trim() || null,
         appointmentDate: selectedSlot.startTime,
       })
       navigate(`/book/${slug}/confirmed`, {
@@ -93,6 +95,7 @@ export default function PublicBooking() {
           endTime: selectedSlot.endTime,
           duration: selectedService.durationMinutes,
           customer: customerName.trim(),
+          email: customerEmail.trim() || null,
         },
       })
     } catch (err) {
@@ -289,6 +292,18 @@ export default function PublicBooking() {
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder="Ej: Juan Pérez"
                   required
+                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email (para confirmación)
+                </label>
+                <input
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="Ej: juan@email.com"
                   className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                 />
               </div>

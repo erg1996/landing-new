@@ -10,21 +10,29 @@ public class AvailabilityService
     private readonly IWorkingHoursRepository _workingHoursRepository;
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly IServiceRepository _serviceRepository;
+    private readonly IBlockedDateRepository _blockedDateRepository;
 
     public AvailabilityService(
         IWorkingHoursRepository workingHoursRepository,
         IAppointmentRepository appointmentRepository,
-        IServiceRepository serviceRepository)
+        IServiceRepository serviceRepository,
+        IBlockedDateRepository blockedDateRepository)
     {
         _workingHoursRepository = workingHoursRepository;
         _appointmentRepository = appointmentRepository;
         _serviceRepository = serviceRepository;
+        _blockedDateRepository = blockedDateRepository;
     }
 
     public async Task<List<AvailableSlotResponse>> GetAvailableSlotsAsync(Guid businessId, DateTime date, Guid serviceId)
     {
         var service = await _serviceRepository.GetByIdAsync(serviceId)
             ?? throw new NotFoundException($"Service with id '{serviceId}' not found.");
+
+        // Check if the date is blocked
+        var blocked = await _blockedDateRepository.GetByBusinessIdAndDateAsync(businessId, date);
+        if (blocked != null)
+            return new List<AvailableSlotResponse>();
 
         int dayOfWeek = (int)date.DayOfWeek;
         var workingHoursList = await _workingHoursRepository.GetByBusinessIdAndDayAsync(businessId, dayOfWeek);

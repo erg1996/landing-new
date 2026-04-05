@@ -74,6 +74,12 @@ export default function BookingConfirmation() {
             </div>
           </div>
 
+          {state.email && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6 text-sm text-blue-700">
+              Se ha enviado una confirmación a <strong>{state.email}</strong>
+            </div>
+          )}
+
           <Link
             to={`/book/${slug}`}
             className="inline-block bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm"

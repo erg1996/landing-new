@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<Service> Services => Set<Service>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<WorkingHours> WorkingHours => Set<WorkingHours>();
+    public DbSet<BlockedDate> BlockedDates => Set<BlockedDate>();
     public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -55,6 +56,17 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => new { e.BusinessId, e.DayOfWeek }).IsUnique();
             entity.HasOne(e => e.Business)
                 .WithMany(b => b.WorkingHours)
+                .HasForeignKey(e => e.BusinessId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BlockedDate>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.HasIndex(e => new { e.BusinessId, e.Date }).IsUnique();
+            entity.HasOne(e => e.Business)
+                .WithMany(b => b.BlockedDates)
                 .HasForeignKey(e => e.BusinessId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
