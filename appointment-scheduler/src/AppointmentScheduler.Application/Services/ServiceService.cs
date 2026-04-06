@@ -40,4 +40,16 @@ public class ServiceService
         var services = await _serviceRepository.GetByBusinessIdAsync(businessId);
         return services.Select(s => new ServiceResponse(s.Id, s.BusinessId, s.Name, s.DurationMinutes)).ToList();
     }
+
+    public async Task DeleteAsync(Guid id, Guid businessId)
+    {
+        var service = await _serviceRepository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Service with id '{id}' not found.");
+
+        if (service.BusinessId != businessId)
+            throw new ForbiddenException("Service does not belong to this business.");
+
+        _serviceRepository.Remove(service);
+        await _serviceRepository.SaveChangesAsync();
+    }
 }

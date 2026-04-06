@@ -11,6 +11,7 @@ public class AvailabilityServiceTests
     private readonly Mock<IWorkingHoursRepository> _workingHoursRepo = new();
     private readonly Mock<IAppointmentRepository> _appointmentRepo = new();
     private readonly Mock<IServiceRepository> _serviceRepo = new();
+    private readonly Mock<IBlockedDateRepository> _blockedDateRepo = new();
     private readonly AvailabilityService _sut;
 
     public AvailabilityServiceTests()
@@ -18,7 +19,8 @@ public class AvailabilityServiceTests
         _sut = new AvailabilityService(
             _workingHoursRepo.Object,
             _appointmentRepo.Object,
-            _serviceRepo.Object);
+            _serviceRepo.Object,
+            _blockedDateRepo.Object);
     }
 
     [Fact]

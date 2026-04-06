@@ -1,5 +1,7 @@
+using AppointmentScheduler.API.Extensions;
 using AppointmentScheduler.Application.DTOs;
 using AppointmentScheduler.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AppointmentScheduler.API.Controllers;
@@ -12,20 +14,7 @@ public class BusinessController : ControllerBase
 
     public BusinessController(BusinessService service) => _service = service;
 
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateBusinessRequest request)
-    {
-        var result = await _service.CreateAsync(request);
-        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
-    }
-
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id)
-    {
-        var result = await _service.GetByIdAsync(id);
-        return Ok(result);
-    }
-
+    // Public: used by public booking page
     [HttpGet("slug/{slug}")]
     public async Task<IActionResult> GetBySlug(string slug)
     {
@@ -33,10 +22,42 @@ public class BusinessController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
+    // --- Authenticated endpoints below ---
+
+    [Authorize]
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
     {
-        var results = await _service.GetAllAsync();
+        var userId = User.GetUserId();
+        await _service.ValidateOwnershipAsync(userId, id);
+        var result = await _service.GetByIdAsync(id);
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> GetMyBusinesses()
+    {
+        var userId = User.GetUserId();
+        var results = await _service.GetAllByUserIdAsync(userId);
         return Ok(results);
+    }
+
+    [Authorize]
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateBusinessRequest request)
+    {
+        var userId = User.GetUserId();
+        var result = await _service.CreateForUserAsync(userId, request);
+        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+    }
+
+    [Authorize]
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateBusinessRequest request)
+    {
+        var userId = User.GetUserId();
+        var result = await _service.UpdateAsync(id, userId, request);
+        return Ok(result);
     }
 }

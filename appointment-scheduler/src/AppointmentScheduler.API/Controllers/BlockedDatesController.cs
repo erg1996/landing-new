@@ -7,14 +7,14 @@ using Microsoft.AspNetCore.Mvc;
 namespace AppointmentScheduler.API.Controllers;
 
 [ApiController]
-[Route("api/working-hours")]
+[Route("api/blocked-dates")]
 [Authorize]
-public class WorkingHoursController : ControllerBase
+public class BlockedDatesController : ControllerBase
 {
-    private readonly WorkingHoursService _service;
+    private readonly BlockedDateService _service;
     private readonly BusinessService _businessService;
 
-    public WorkingHoursController(WorkingHoursService service, BusinessService businessService)
+    public BlockedDatesController(BlockedDateService service, BusinessService businessService)
     {
         _service = service;
         _businessService = businessService;
@@ -30,21 +30,12 @@ public class WorkingHoursController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateWorkingHoursRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateBlockedDateRequest request)
     {
         var userId = User.GetUserId();
         await _businessService.ValidateOwnershipAsync(userId, request.BusinessId);
         var result = await _service.CreateAsync(request);
-        return Created($"/api/working-hours/{result.Id}", result);
-    }
-
-    [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] CreateWorkingHoursRequest request)
-    {
-        var userId = User.GetUserId();
-        await _businessService.ValidateOwnershipAsync(userId, request.BusinessId);
-        var result = await _service.UpdateAsync(id, request);
-        return Ok(result);
+        return Created($"/api/blocked-dates/{result.Id}", result);
     }
 
     [HttpDelete("{id:guid}")]
@@ -52,7 +43,7 @@ public class WorkingHoursController : ControllerBase
     {
         var userId = User.GetUserId();
         await _businessService.ValidateOwnershipAsync(userId, businessId);
-        await _service.DeleteAsync(id);
+        await _service.DeleteAsync(id, businessId);
         return NoContent();
     }
 }

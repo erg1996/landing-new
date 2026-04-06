@@ -2,6 +2,7 @@ using AppointmentScheduler.Application.Interfaces;
 using AppointmentScheduler.Application.Services;
 using AppointmentScheduler.Infrastructure.Data;
 using AppointmentScheduler.Infrastructure.Repositories;
+using AppointmentScheduler.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +22,8 @@ public static class DependencyInjection
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IWorkingHoursRepository, WorkingHoursRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IBlockedDateRepository, BlockedDateRepository>();
+        services.AddScoped<IUserBusinessRepository, UserBusinessRepository>();
 
         // Application services
         services.AddScoped<BusinessService>();
@@ -29,12 +32,15 @@ public static class DependencyInjection
         services.AddScoped<AvailabilityService>();
         services.AddScoped<AppointmentService>();
         services.AddScoped<AnalyticsService>();
+        services.AddScoped<BlockedDateService>();
+        services.AddScoped<IEmailService, SmtpEmailService>();
         services.AddScoped<AuthService>(sp =>
         {
             var userRepo = sp.GetRequiredService<IUserRepository>();
             var bizRepo = sp.GetRequiredService<IBusinessRepository>();
+            var userBizRepo = sp.GetRequiredService<IUserBusinessRepository>();
             var jwtSecret = configuration["Jwt:Secret"] ?? "SchedulePro-Default-Secret-Key-Change-In-Production-Min32Chars!";
-            return new AuthService(userRepo, bizRepo, jwtSecret);
+            return new AuthService(userRepo, bizRepo, userBizRepo, jwtSecret);
         });
 
         return services;

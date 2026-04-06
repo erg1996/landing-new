@@ -11,22 +11,25 @@ public class AppointmentService
     private readonly IServiceRepository _serviceRepository;
     private readonly IBusinessRepository _businessRepository;
     private readonly IWorkingHoursRepository _workingHoursRepository;
+    private readonly IEmailService _emailService;
 
     public AppointmentService(
         IAppointmentRepository appointmentRepository,
         IServiceRepository serviceRepository,
         IBusinessRepository businessRepository,
-        IWorkingHoursRepository workingHoursRepository)
+        IWorkingHoursRepository workingHoursRepository,
+        IEmailService emailService)
     {
         _appointmentRepository = appointmentRepository;
         _serviceRepository = serviceRepository;
         _businessRepository = businessRepository;
         _workingHoursRepository = workingHoursRepository;
+        _emailService = emailService;
     }
 
     public async Task<AppointmentResponse> CreateAsync(CreateAppointmentRequest request)
     {
-        _ = await _businessRepository.GetByIdAsync(request.BusinessId)
+        var business = await _businessRepository.GetByIdAsync(request.BusinessId)
             ?? throw new NotFoundException($"Business with id '{request.BusinessId}' not found.");
 
         var service = await _serviceRepository.GetByIdAsync(request.ServiceId)
@@ -64,6 +67,7 @@ public class AppointmentService
             BusinessId = request.BusinessId,
             ServiceId = request.ServiceId,
             CustomerName = request.CustomerName,
+            CustomerEmail = request.CustomerEmail?.Trim(),
             AppointmentDate = appointmentDate,
             DurationMinutes = service.DurationMinutes,
             CreatedAt = DateTime.UtcNow
@@ -71,6 +75,20 @@ public class AppointmentService
 
         await _appointmentRepository.AddAsync(appointment);
         await _appointmentRepository.SaveChangesAsync();
+
+        // Send confirmation email (fire-and-forget, won't block response)
+        if (!string.IsNullOrWhiteSpace(appointment.CustomerEmail))
+        {
+            _ = _emailService.SendAppointmentConfirmationAsync(
+                appointment.CustomerEmail,
+                appointment.CustomerName,
+                business.Name,
+                service.Name,
+                appointment.AppointmentDate,
+                appointment.DurationMinutes,
+                business.BrandColor,
+                business.LogoUrl);
+        }
 
         return ToResponse(appointment);
     }
@@ -82,6 +100,6 @@ public class AppointmentService
     }
 
     private static AppointmentResponse ToResponse(Appointment a) =>
-        new(a.Id, a.BusinessId, a.ServiceId, a.CustomerName,
+        new(a.Id, a.BusinessId, a.ServiceId, a.CustomerName, a.CustomerEmail,
             a.AppointmentDate, a.DurationMinutes, a.EndTime, a.CreatedAt);
 }

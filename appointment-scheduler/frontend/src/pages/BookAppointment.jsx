@@ -11,6 +11,7 @@ export default function BookAppointment() {
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [customerName, setCustomerName] = useState('')
+  const [customerEmail, setCustomerEmail] = useState('')
   const [booking, setBooking] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
   const [slotsError, setSlotsError] = useState('')
@@ -73,10 +74,12 @@ export default function BookAppointment() {
         businessId: business.id,
         serviceId,
         customerName: customerName.trim(),
+        customerEmail: customerEmail.trim() || null,
         appointmentDate: selectedSlot.startTime,
       })
-      setMessage({ type: 'success', text: 'Cita reservada exitosamente' })
+      setMessage({ type: 'success', text: customerEmail.trim() ? 'Cita reservada. Confirmación enviada por email.' : 'Cita reservada exitosamente' })
       setCustomerName('')
+      setCustomerEmail('')
       setSelectedSlot(null)
       refreshAppointments()
       // Refresh slots
@@ -179,8 +182,8 @@ export default function BookAppointment() {
               · {services.find((s) => s.id === serviceId)?.name}
             </span>
           </div>
-          <div className="flex gap-3 items-end">
-            <div className="flex-1">
+          <div className="flex gap-3 items-end flex-wrap">
+            <div className="flex-1 min-w-[180px]">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Nombre del cliente
               </label>
@@ -189,6 +192,18 @@ export default function BookAppointment() {
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder="Ej: Juan Pérez"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              />
+            </div>
+            <div className="flex-1 min-w-[180px]">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email (opcional)
+              </label>
+              <input
+                type="email"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                placeholder="Ej: juan@email.com"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
               />
             </div>

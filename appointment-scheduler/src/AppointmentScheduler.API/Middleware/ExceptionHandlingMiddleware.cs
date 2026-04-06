@@ -32,6 +32,12 @@ public class ExceptionHandlingMiddleware
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(JsonSerializer.Serialize(new { error = ex.Message }));
         }
+        catch (ForbiddenException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new { error = ex.Message }));
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unhandled exception");

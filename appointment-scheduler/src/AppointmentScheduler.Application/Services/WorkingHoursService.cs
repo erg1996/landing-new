@@ -16,6 +16,12 @@ public class WorkingHoursService
         _businessRepository = businessRepository;
     }
 
+    public async Task<List<WorkingHoursResponse>> GetByBusinessIdAsync(Guid businessId)
+    {
+        var hours = await _workingHoursRepository.GetByBusinessIdAsync(businessId);
+        return hours.Select(ToResponse).ToList();
+    }
+
     public async Task<WorkingHoursResponse> CreateAsync(CreateWorkingHoursRequest request)
     {
         _ = await _businessRepository.GetByIdAsync(request.BusinessId)
@@ -43,6 +49,34 @@ public class WorkingHoursService
         await _workingHoursRepository.AddAsync(workingHours);
         await _workingHoursRepository.SaveChangesAsync();
 
-        return new WorkingHoursResponse(workingHours.Id, workingHours.BusinessId, workingHours.DayOfWeek, workingHours.StartTime, workingHours.EndTime);
+        return ToResponse(workingHours);
     }
+
+    public async Task<WorkingHoursResponse> UpdateAsync(Guid id, CreateWorkingHoursRequest request)
+    {
+        var wh = await _workingHoursRepository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Working hours with id '{id}' not found.");
+
+        if (request.StartTime >= request.EndTime)
+            throw new ConflictException("StartTime must be before EndTime.");
+
+        wh.StartTime = request.StartTime;
+        wh.EndTime = request.EndTime;
+
+        await _workingHoursRepository.SaveChangesAsync();
+
+        return ToResponse(wh);
+    }
+
+    public async Task DeleteAsync(Guid id)
+    {
+        var wh = await _workingHoursRepository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Working hours with id '{id}' not found.");
+
+        _workingHoursRepository.Remove(wh);
+        await _workingHoursRepository.SaveChangesAsync();
+    }
+
+    private static WorkingHoursResponse ToResponse(WorkingHours wh) =>
+        new(wh.Id, wh.BusinessId, wh.DayOfWeek, wh.StartTime, wh.EndTime);
 }

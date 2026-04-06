@@ -13,6 +13,7 @@ public class AppointmentServiceTests
     private readonly Mock<IServiceRepository> _serviceRepo = new();
     private readonly Mock<IBusinessRepository> _businessRepo = new();
     private readonly Mock<IWorkingHoursRepository> _workingHoursRepo = new();
+    private readonly Mock<IEmailService> _emailService = new();
     private readonly AppointmentService _sut;
 
     private readonly Guid _businessId = Guid.NewGuid();
@@ -24,7 +25,8 @@ public class AppointmentServiceTests
             _appointmentRepo.Object,
             _serviceRepo.Object,
             _businessRepo.Object,
-            _workingHoursRepo.Object);
+            _workingHoursRepo.Object,
+            _emailService.Object);
 
         // Default setup: business and service exist, working hours Mon 9-17
         _businessRepo.Setup(r => r.GetByIdAsync(_businessId))
@@ -47,7 +49,7 @@ public class AppointmentServiceTests
         _appointmentRepo.Setup(r => r.GetByBusinessIdAndDateAsync(_businessId, date))
             .ReturnsAsync(new List<Appointment>());
 
-        var request = new CreateAppointmentRequest(_businessId, _serviceId, "John Doe", date);
+        var request = new CreateAppointmentRequest(_businessId, _serviceId, "John Doe", null, date);
         var result = await _sut.CreateAsync(request);
 
         Assert.Equal("John Doe", result.CustomerName);
@@ -67,7 +69,7 @@ public class AppointmentServiceTests
                 new() { AppointmentDate = date, DurationMinutes = 30 } // 10:00-10:30
             });
 
-        var request = new CreateAppointmentRequest(_businessId, _serviceId, "Jane Doe", date);
+        var request = new CreateAppointmentRequest(_businessId, _serviceId, "Jane Doe", null, date);
 
         await Assert.ThrowsAsync<ConflictException>(() => _sut.CreateAsync(request));
     }
@@ -82,7 +84,7 @@ public class AppointmentServiceTests
                 new() { AppointmentDate = date.AddMinutes(-15), DurationMinutes = 30 } // 9:45-10:15
             });
 
-        var request = new CreateAppointmentRequest(_businessId, _serviceId, "Jane Doe", date);
+        var request = new CreateAppointmentRequest(_businessId, _serviceId, "Jane Doe", null, date);
 
         await Assert.ThrowsAsync<ConflictException>(() => _sut.CreateAsync(request));
     }
@@ -98,7 +100,7 @@ public class AppointmentServiceTests
                 new() { AppointmentDate = date.AddMinutes(-30), DurationMinutes = 30 } // 10:00-10:30
             });
 
-        var request = new CreateAppointmentRequest(_businessId, _serviceId, "John Doe", date);
+        var request = new CreateAppointmentRequest(_businessId, _serviceId, "John Doe", null, date);
         var result = await _sut.CreateAsync(request);
 
         Assert.Equal(date, result.AppointmentDate);
@@ -112,7 +114,7 @@ public class AppointmentServiceTests
         _appointmentRepo.Setup(r => r.GetByBusinessIdAndDateAsync(_businessId, date))
             .ReturnsAsync(new List<Appointment>());
 
-        var request = new CreateAppointmentRequest(_businessId, _serviceId, "Jane Doe", date);
+        var request = new CreateAppointmentRequest(_businessId, _serviceId, "Jane Doe", null, date);
 
         await Assert.ThrowsAsync<ConflictException>(() => _sut.CreateAsync(request));
     }
@@ -129,7 +131,7 @@ public class AppointmentServiceTests
             .ReturnsAsync(new List<WorkingHours>());
 
         var date = new DateTime(2026, 4, 5, 10, 0, 0); // Sunday
-        var request = new CreateAppointmentRequest(sundayBusinessId, _serviceId, "Jane Doe", date);
+        var request = new CreateAppointmentRequest(sundayBusinessId, _serviceId, "Jane Doe", null, date);
 
         await Assert.ThrowsAsync<ConflictException>(() => _sut.CreateAsync(request));
     }

@@ -20,6 +20,9 @@ public class ServiceRepository : IServiceRepository
     public async Task AddAsync(Service service) =>
         await _context.Services.AddAsync(service);
 
+    public void Remove(Service service) =>
+        _context.Services.Remove(service);
+
     public async Task SaveChangesAsync() =>
         await _context.SaveChangesAsync();
 }

@@ -11,7 +11,9 @@ public class AppDbContext : DbContext
     public DbSet<Service> Services => Set<Service>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<WorkingHours> WorkingHours => Set<WorkingHours>();
+    public DbSet<BlockedDate> BlockedDates => Set<BlockedDate>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserBusiness> UserBusinesses => Set<UserBusiness>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -20,6 +22,8 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Slug).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.LogoUrl).HasMaxLength(500);
+            entity.Property(e => e.BrandColor).HasMaxLength(20);
             entity.HasIndex(e => e.Slug).IsUnique();
         });
 
@@ -37,7 +41,7 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.CustomerName).IsRequired().HasMaxLength(200);
-            entity.Ignore(e => e.EndTime); // Computed property, not stored
+            entity.Ignore(e => e.EndTime);
             entity.HasIndex(e => new { e.BusinessId, e.AppointmentDate });
             entity.HasOne(e => e.Business)
                 .WithMany(b => b.Appointments)
@@ -59,6 +63,17 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<BlockedDate>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.HasIndex(e => new { e.BusinessId, e.Date }).IsUnique();
+            entity.HasOne(e => e.Business)
+                .WithMany(b => b.BlockedDates)
+                .HasForeignKey(e => e.BusinessId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -68,6 +83,19 @@ public class AppDbContext : DbContext
             entity.Property(e => e.FullName).IsRequired().HasMaxLength(200);
             entity.HasOne(e => e.Business)
                 .WithMany()
+                .HasForeignKey(e => e.BusinessId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<UserBusiness>(entity =>
+        {
+            entity.HasKey(e => new { e.UserId, e.BusinessId });
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.UserBusinesses)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Business)
+                .WithMany(b => b.UserBusinesses)
                 .HasForeignKey(e => e.BusinessId)
                 .OnDelete(DeleteBehavior.Cascade);
         });

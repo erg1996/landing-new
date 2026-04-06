@@ -13,12 +13,18 @@ public class AuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly IBusinessRepository _businessRepository;
+    private readonly IUserBusinessRepository _userBusinessRepository;
     private readonly string _jwtSecret;
 
-    public AuthService(IUserRepository userRepository, IBusinessRepository businessRepository, string jwtSecret)
+    public AuthService(
+        IUserRepository userRepository,
+        IBusinessRepository businessRepository,
+        IUserBusinessRepository userBusinessRepository,
+        string jwtSecret)
     {
         _userRepository = userRepository;
         _businessRepository = businessRepository;
+        _userBusinessRepository = userBusinessRepository;
         _jwtSecret = jwtSecret;
     }
 
@@ -28,7 +34,6 @@ public class AuthService
         if (existing != null)
             throw new ConflictException("An account with this email already exists.");
 
-        // Create the business
         var slug = BusinessService.GenerateSlug(request.BusinessName);
         var existingBiz = await _businessRepository.GetBySlugAsync(slug);
         if (existingBiz != null)
@@ -55,6 +60,15 @@ public class AuthService
         };
 
         await _userRepository.AddAsync(user);
+
+        // Link user to business in UserBusiness join table
+        await _userBusinessRepository.AddAsync(new UserBusiness
+        {
+            UserId = user.Id,
+            BusinessId = business.Id,
+            CreatedAt = DateTime.UtcNow
+        });
+
         await _userRepository.SaveChangesAsync();
 
         var token = GenerateToken(user);

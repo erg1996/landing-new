@@ -4,6 +4,7 @@ public record CreateAppointmentRequest(
     Guid BusinessId,
     Guid ServiceId,
     string CustomerName,
+    string? CustomerEmail,
     DateTime AppointmentDate);
 
 public record AppointmentResponse(
@@ -11,6 +12,7 @@ public record AppointmentResponse(
     Guid BusinessId,
     Guid ServiceId,
     string CustomerName,
+    string? CustomerEmail,
     DateTime AppointmentDate,
     int DurationMinutes,
     DateTime EndTime,
