@@ -3,6 +3,7 @@ import { useBusiness } from '../components/BusinessContext'
 import {
   createBusiness,
   createService,
+  deleteService,
   createWorkingHours,
   getWorkingHours,
   updateWorkingHours,
@@ -11,6 +12,8 @@ import {
   createBlockedDate,
   deleteBlockedDate,
   getAllBusinesses,
+  updateBusiness,
+  uploadLogo,
 } from '../api/client'
 
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
@@ -202,13 +205,49 @@ function CreateBusinessForm({ onCreated }) {
 }
 
 function BusinessInfo({ business }) {
+  const { setBusiness } = useBusiness()
   const publicUrl = `${window.location.origin}/book/${business.slug}`
   const [copied, setCopied] = useState(false)
+  const [color, setColor] = useState(business.brandColor ?? '#4F46E5')
+  const [logoPreview, setLogoPreview] = useState(business.logoUrl ?? null)
+  const [logoFile, setLogoFile] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [saveMsg, setSaveMsg] = useState({ type: '', text: '' })
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(publicUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setLogoFile(file)
+    setLogoPreview(URL.createObjectURL(file))
+  }
+
+  const handleSaveBranding = async () => {
+    setSaving(true)
+    setSaveMsg({ type: '', text: '' })
+    try {
+      let logoUrl = business.logoUrl ?? null
+      if (logoFile) {
+        const uploaded = await uploadLogo(logoFile)
+        logoUrl = uploaded.url
+      }
+      const updated = await updateBusiness(business.id, {
+        name: business.name,
+        brandColor: color,
+        logoUrl,
+      })
+      setBusiness(updated)
+      setSaveMsg({ type: 'success', text: 'Personalización guardada' })
+    } catch (err) {
+      setSaveMsg({ type: 'error', text: err.message })
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -229,14 +268,65 @@ function BusinessInfo({ business }) {
           <button
             onClick={copyLink}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              copied
-                ? 'bg-green-600 text-white'
-                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+              copied ? 'bg-green-600 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-700'
             }`}
           >
             {copied ? 'Copiado!' : 'Copiar'}
           </button>
         </div>
+      </div>
+
+      {/* Branding */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="font-semibold text-gray-800 mb-4">Personalización</h2>
+        <div className="flex gap-6 items-start flex-wrap">
+          {/* Logo */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Logo</label>
+            <div className="flex items-center gap-4">
+              {logoPreview ? (
+                <img src={logoPreview} alt="Logo" className="w-16 h-16 rounded-xl object-cover border border-gray-200" />
+              ) : (
+                <div className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs">
+                  Logo
+                </div>
+              )}
+              <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                {logoPreview ? 'Cambiar' : 'Subir logo'}
+                <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+              </label>
+            </div>
+          </div>
+          {/* Color */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Color de marca</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="w-12 h-10 rounded-lg border border-gray-300 cursor-pointer p-1"
+              />
+              <span className="text-sm font-mono text-gray-600">{color}</span>
+              <div
+                className="w-8 h-8 rounded-full border border-gray-200"
+                style={{ backgroundColor: color }}
+              />
+            </div>
+          </div>
+        </div>
+        {saveMsg.text && (
+          <p className={`text-sm mt-3 ${saveMsg.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+            {saveMsg.text}
+          </p>
+        )}
+        <button
+          onClick={handleSaveBranding}
+          disabled={saving}
+          className="mt-4 bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+        >
+          {saving ? 'Guardando...' : 'Guardar personalización'}
+        </button>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">

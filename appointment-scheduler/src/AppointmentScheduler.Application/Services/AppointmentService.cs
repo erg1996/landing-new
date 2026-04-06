@@ -85,7 +85,9 @@ public class AppointmentService
                 business.Name,
                 service.Name,
                 appointment.AppointmentDate,
-                appointment.DurationMinutes);
+                appointment.DurationMinutes,
+                business.BrandColor,
+                business.LogoUrl);
         }
 
         return ToResponse(appointment);

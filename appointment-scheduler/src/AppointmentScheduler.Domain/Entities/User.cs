@@ -10,4 +10,5 @@ public class User
     public DateTime CreatedAt { get; set; }
 
     public Business Business { get; set; } = null!;
+    public List<UserBusiness> UserBusinesses { get; set; } = new();
 }

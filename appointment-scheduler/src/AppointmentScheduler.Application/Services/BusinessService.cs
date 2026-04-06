@@ -11,22 +11,20 @@ namespace AppointmentScheduler.Application.Services;
 public class BusinessService
 {
     private readonly IBusinessRepository _repository;
+    private readonly IUserBusinessRepository _userBusinessRepository;
 
-    public BusinessService(IBusinessRepository repository)
+    public BusinessService(IBusinessRepository repository, IUserBusinessRepository userBusinessRepository)
     {
         _repository = repository;
+        _userBusinessRepository = userBusinessRepository;
     }
 
-    public async Task<BusinessResponse> CreateAsync(CreateBusinessRequest request)
+    public async Task<BusinessResponse> CreateForUserAsync(Guid userId, CreateBusinessRequest request)
     {
         var slug = GenerateSlug(request.Name);
-
-        // Ensure slug uniqueness by appending a short suffix if needed
         var existing = await _repository.GetBySlugAsync(slug);
         if (existing != null)
-        {
             slug = $"{slug}-{Guid.NewGuid().ToString()[..4]}";
-        }
 
         var business = new Business
         {
@@ -37,6 +35,14 @@ public class BusinessService
         };
 
         await _repository.AddAsync(business);
+
+        await _userBusinessRepository.AddAsync(new UserBusiness
+        {
+            UserId = userId,
+            BusinessId = business.Id,
+            CreatedAt = DateTime.UtcNow
+        });
+
         await _repository.SaveChangesAsync();
 
         return ToResponse(business);
@@ -46,7 +52,6 @@ public class BusinessService
     {
         var business = await _repository.GetByIdAsync(id)
             ?? throw new NotFoundException($"Business with id '{id}' not found.");
-
         return ToResponse(business);
     }
 
@@ -54,26 +59,48 @@ public class BusinessService
     {
         var business = await _repository.GetBySlugAsync(slug)
             ?? throw new NotFoundException($"Business with slug '{slug}' not found.");
+        return ToResponse(business);
+    }
+
+    public async Task<List<BusinessResponse>> GetAllByUserIdAsync(Guid userId)
+    {
+        var businesses = await _userBusinessRepository.GetBusinessesByUserIdAsync(userId);
+        return businesses.Select(ToResponse).ToList();
+    }
+
+    public async Task<BusinessResponse> UpdateAsync(Guid id, Guid userId, UpdateBusinessRequest request)
+    {
+        var hasAccess = await _userBusinessRepository.HasAccessAsync(userId, id);
+        if (!hasAccess)
+            throw new ForbiddenException("You do not have access to this business.");
+
+        var business = await _repository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Business with id '{id}' not found.");
+
+        if (!string.IsNullOrWhiteSpace(request.Name))
+            business.Name = request.Name.Trim();
+        if (request.BrandColor != null)
+            business.BrandColor = string.IsNullOrWhiteSpace(request.BrandColor) ? null : request.BrandColor.Trim();
+        if (request.LogoUrl != null)
+            business.LogoUrl = string.IsNullOrWhiteSpace(request.LogoUrl) ? null : request.LogoUrl.Trim();
+
+        await _repository.SaveChangesAsync();
 
         return ToResponse(business);
     }
 
-    public async Task<List<BusinessResponse>> GetAllAsync()
+    public async Task ValidateOwnershipAsync(Guid userId, Guid businessId)
     {
-        var businesses = await _repository.GetAllAsync();
-        return businesses.Select(ToResponse).ToList();
+        var hasAccess = await _userBusinessRepository.HasAccessAsync(userId, businessId);
+        if (!hasAccess)
+            throw new ForbiddenException("You do not have access to this business.");
     }
 
     private static BusinessResponse ToResponse(Business b) =>
-        new(b.Id, b.Name, b.Slug, b.CreatedAt);
+        new(b.Id, b.Name, b.Slug, b.LogoUrl, b.BrandColor, b.CreatedAt);
 
-    /// <summary>
-    /// Generates a URL-safe slug from a business name.
-    /// "Mi Barbería Cool" → "mi-barberia-cool"
-    /// </summary>
     public static string GenerateSlug(string name)
     {
-        // Normalize and remove diacritics (á→a, ñ→n, etc.)
         var normalized = name.Normalize(NormalizationForm.FormD);
         var sb = new StringBuilder();
         foreach (var c in normalized)
@@ -84,13 +111,8 @@ public class BusinessService
         }
 
         var slug = sb.ToString().Normalize(NormalizationForm.FormC).ToLowerInvariant();
-
-        // Replace non-alphanumeric with hyphens
         slug = Regex.Replace(slug, @"[^a-z0-9]+", "-");
-
-        // Trim leading/trailing hyphens
         slug = slug.Trim('-');
-
         return slug;
     }
 }

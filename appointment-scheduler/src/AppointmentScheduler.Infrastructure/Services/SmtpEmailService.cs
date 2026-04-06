@@ -23,7 +23,9 @@ public class SmtpEmailService : IEmailService
         string businessName,
         string serviceName,
         DateTime appointmentDate,
-        int durationMinutes)
+        int durationMinutes,
+        string? brandColor = null,
+        string? logoUrl = null)
     {
         var smtpHost = _config["Email:SmtpHost"];
         if (string.IsNullOrEmpty(smtpHost))
@@ -42,11 +44,17 @@ public class SmtpEmailService : IEmailService
         var dateStr = appointmentDate.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es"));
         var timeStr = $"{appointmentDate:HH:mm} — {endTime:HH:mm}";
 
+        var headerColor = brandColor ?? "#4F46E5";
+        var logoHtml = !string.IsNullOrEmpty(logoUrl)
+            ? $"<img src='{logoUrl}' alt='{businessName}' style='width:60px;height:60px;border-radius:12px;object-fit:cover;margin-bottom:12px;border:2px solid rgba(255,255,255,0.3);'/><br/>"
+            : "";
+
         var subject = $"Confirmación de cita - {businessName}";
         var body = $@"
 <html>
 <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
-    <div style='background: #4F46E5; color: white; padding: 20px; border-radius: 12px 12px 0 0; text-align: center;'>
+    <div style='background: {headerColor}; color: white; padding: 24px 20px; border-radius: 12px 12px 0 0; text-align: center;'>
+        {logoHtml}
         <h1 style='margin: 0; font-size: 24px;'>{businessName}</h1>
         <p style='margin: 5px 0 0; opacity: 0.9;'>Confirmación de Cita</p>
     </div>

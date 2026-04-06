@@ -1,11 +1,24 @@
 // In dev, Vite proxy handles /api → backend. In production, set VITE_API_URL.
 const BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
-async function request(path, options = {}) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
-  })
+function getToken() {
+  try {
+    const auth = localStorage.getItem('auth')
+    return auth ? JSON.parse(auth).token : null
+  } catch {
+    return null
+  }
+}
+
+async function request(path, options = {}, authenticated = false) {
+  const headers = { 'Content-Type': 'application/json', ...options.headers }
+
+  if (authenticated) {
+    const token = getToken()
+    if (token) headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new Error(body.error ?? `HTTP ${res.status}`)
@@ -14,66 +27,98 @@ async function request(path, options = {}) {
   return res.json()
 }
 
-// Business
+// Authenticated request shorthand
+const authRequest = (path, options = {}) => request(path, options, true)
+
+// Public requests (no auth needed)
+const publicRequest = (path, options = {}) => request(path, options, false)
+
+// ─── Business ─────────────────────────────────────────────────────────────────
+export const getAllBusinesses = () => authRequest('/api/business')
+
+export const getBusiness = (id) => authRequest(`/api/business/${id}`)
+
+export const getBusinessBySlug = (slug) => publicRequest(`/api/business/slug/${slug}`)
+
 export const createBusiness = (data) =>
-  request('/api/business', { method: 'POST', body: JSON.stringify(data) })
+  authRequest('/api/business', { method: 'POST', body: JSON.stringify(data) })
 
-export const getBusiness = (id) => request(`/api/business/${id}`)
+export const updateBusiness = (id, data) =>
+  authRequest(`/api/business/${id}`, { method: 'PUT', body: JSON.stringify(data) })
 
-export const getBusinessBySlug = (slug) => request(`/api/business/slug/${slug}`)
-
-export const getAllBusinesses = () => request('/api/business')
-
-// Services
-export const createService = (data) =>
-  request('/api/services', { method: 'POST', body: JSON.stringify(data) })
-
+// ─── Services ────────────────────────────────────────────────────────────────
+// GET services is public (needed for public booking page)
 export const getServices = (businessId) =>
-  request(`/api/services?businessId=${businessId}`)
+  publicRequest(`/api/services?businessId=${businessId}`)
 
-// Working Hours
+export const createService = (data) =>
+  authRequest('/api/services', { method: 'POST', body: JSON.stringify(data) })
+
+export const deleteService = (id, businessId) =>
+  authRequest(`/api/services/${id}?businessId=${businessId}`, { method: 'DELETE' })
+
+// ─── Working Hours ────────────────────────────────────────────────────────────
 export const getWorkingHours = (businessId) =>
-  request(`/api/working-hours?businessId=${businessId}`)
+  authRequest(`/api/working-hours?businessId=${businessId}`)
 
 export const createWorkingHours = (data) =>
-  request('/api/working-hours', { method: 'POST', body: JSON.stringify(data) })
+  authRequest('/api/working-hours', { method: 'POST', body: JSON.stringify(data) })
 
 export const updateWorkingHours = (id, data) =>
-  request(`/api/working-hours/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  authRequest(`/api/working-hours/${id}`, { method: 'PUT', body: JSON.stringify(data) })
 
-export const deleteWorkingHours = (id) =>
-  request(`/api/working-hours/${id}`, { method: 'DELETE' })
+export const deleteWorkingHours = (id, businessId) =>
+  authRequest(`/api/working-hours/${id}?businessId=${businessId}`, { method: 'DELETE' })
 
-// Blocked Dates
+// ─── Blocked Dates ────────────────────────────────────────────────────────────
 export const getBlockedDates = (businessId) =>
-  request(`/api/blocked-dates?businessId=${businessId}`)
+  authRequest(`/api/blocked-dates?businessId=${businessId}`)
 
 export const createBlockedDate = (data) =>
-  request('/api/blocked-dates', { method: 'POST', body: JSON.stringify(data) })
+  authRequest('/api/blocked-dates', { method: 'POST', body: JSON.stringify(data) })
 
 export const deleteBlockedDate = (id, businessId) =>
-  request(`/api/blocked-dates/${id}?businessId=${businessId}`, { method: 'DELETE' })
+  authRequest(`/api/blocked-dates/${id}?businessId=${businessId}`, { method: 'DELETE' })
 
-// Availability
+// ─── Availability (public) ────────────────────────────────────────────────────
 export const getAvailability = (businessId, date, serviceId) =>
-  request(
+  publicRequest(
     `/api/availability?businessId=${businessId}&date=${encodeURIComponent(date)}&serviceId=${serviceId}`
   )
 
-// Auth
+// ─── Auth ─────────────────────────────────────────────────────────────────────
 export const register = (data) =>
-  request('/api/auth/register', { method: 'POST', body: JSON.stringify(data) })
+  publicRequest('/api/auth/register', { method: 'POST', body: JSON.stringify(data) })
 
 export const login = (data) =>
-  request('/api/auth/login', { method: 'POST', body: JSON.stringify(data) })
+  publicRequest('/api/auth/login', { method: 'POST', body: JSON.stringify(data) })
 
-// Appointments
+// ─── Appointments ─────────────────────────────────────────────────────────────
+// POST is public (customers booking from public page)
 export const createAppointment = (data) =>
-  request('/api/appointments', { method: 'POST', body: JSON.stringify(data) })
+  publicRequest('/api/appointments', { method: 'POST', body: JSON.stringify(data) })
 
 export const getAppointments = (businessId) =>
-  request(`/api/appointments?businessId=${businessId}`)
+  authRequest(`/api/appointments?businessId=${businessId}`)
 
-// Analytics
+// ─── Analytics ────────────────────────────────────────────────────────────────
 export const getDashboardAnalytics = (businessId) =>
-  request(`/api/analytics/dashboard?businessId=${businessId}`)
+  authRequest(`/api/analytics/dashboard?businessId=${businessId}`)
+
+// ─── Upload ───────────────────────────────────────────────────────────────────
+export const uploadLogo = async (file) => {
+  const token = getToken()
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const res = await fetch(`${BASE_URL}/api/upload/logo`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error ?? `HTTP ${res.status}`)
+  }
+  return res.json()
+}

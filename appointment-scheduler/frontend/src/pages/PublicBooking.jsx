@@ -96,6 +96,8 @@ export default function PublicBooking() {
           duration: selectedService.durationMinutes,
           customer: customerName.trim(),
           email: customerEmail.trim() || null,
+          brandColor: business.brandColor ?? '#4F46E5',
+          logoUrl: business.logoUrl ?? null,
         },
       })
     } catch (err) {
@@ -132,10 +134,20 @@ export default function PublicBooking() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-lg mx-auto px-4 py-5 text-center">
-          <h1 className="text-2xl font-bold text-gray-800">{business.name}</h1>
-          <p className="text-gray-500 text-sm mt-1">Reserva tu cita online</p>
+      <div
+        className="border-b border-gray-200"
+        style={{ backgroundColor: business.brandColor ?? '#4F46E5' }}
+      >
+        <div className="max-w-lg mx-auto px-4 py-6 text-center">
+          {business.logoUrl && (
+            <img
+              src={business.logoUrl}
+              alt={business.name}
+              className="w-16 h-16 rounded-xl object-cover mx-auto mb-3 border-2 border-white/30"
+            />
+          )}
+          <h1 className="text-2xl font-bold text-white">{business.name}</h1>
+          <p className="text-white/80 text-sm mt-1">Reserva tu cita online</p>
         </div>
       </div>
 
@@ -146,10 +158,9 @@ export default function PublicBooking() {
             <div key={s} className="flex items-center gap-2">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  step >= s
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-200 text-gray-500'
+                  step >= s ? 'text-white' : 'bg-gray-200 text-gray-500'
                 }`}
+              style={step >= s ? { backgroundColor: business.brandColor ?? '#4F46E5' } : {}}
               >
                 {s}
               </div>
@@ -327,7 +338,8 @@ export default function PublicBooking() {
               <button
                 type="submit"
                 disabled={booking || !customerName.trim()}
-                className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors text-sm"
+                className="w-full text-white py-3 rounded-lg font-medium disabled:opacity-50 transition-colors text-sm"
+              style={{ backgroundColor: business.brandColor ?? '#4F46E5' }}
               >
                 {booking ? 'Reservando...' : 'Confirmar Cita'}
               </button>

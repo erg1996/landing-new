@@ -8,5 +8,7 @@ public interface IEmailService
         string businessName,
         string serviceName,
         DateTime appointmentDate,
-        int durationMinutes);
+        int durationMinutes,
+        string? brandColor = null,
+        string? logoUrl = null);
 }
