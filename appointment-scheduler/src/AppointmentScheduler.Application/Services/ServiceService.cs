@@ -25,7 +25,7 @@ public class ServiceService
         {
             Id = Guid.NewGuid(),
             BusinessId = request.BusinessId,
-            Name = request.Name,
+            Name = request.Name.Trim(),
             DurationMinutes = request.DurationMinutes
         };
 
@@ -49,7 +49,8 @@ public class ServiceService
         if (service.BusinessId != businessId)
             throw new ForbiddenException("Service does not belong to this business.");
 
-        _serviceRepository.Remove(service);
+        // Soft delete instead of hard delete
+        service.IsDeleted = true;
         await _serviceRepository.SaveChangesAsync();
     }
 }

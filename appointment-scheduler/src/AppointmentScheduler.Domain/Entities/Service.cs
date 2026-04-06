@@ -6,6 +6,7 @@ public class Service
     public Guid BusinessId { get; set; }
     public string Name { get; set; } = string.Empty;
     public int DurationMinutes { get; set; }
+    public bool IsDeleted { get; set; }
 
     public Business Business { get; set; } = null!;
 }

@@ -1,79 +1,115 @@
 import { useBusiness } from '../components/BusinessContext'
+import { updateAppointmentStatus } from '../api/client'
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
+
+const STATUS_CONFIG = {
+  Pending: { label: 'Pendiente', bg: 'bg-yellow-50 text-yellow-700', dot: 'bg-yellow-400' },
+  Confirmed: { label: 'Confirmada', bg: 'bg-blue-50 text-blue-700', dot: 'bg-blue-400' },
+  Cancelled: { label: 'Cancelada', bg: 'bg-red-50 text-red-600', dot: 'bg-red-400' },
+  Completed: { label: 'Completada', bg: 'bg-green-50 text-green-700', dot: 'bg-green-400' },
+}
 
 export default function AppointmentsList() {
   const { business, appointments, services, refreshAppointments } = useBusiness()
+  const [updating, setUpdating] = useState(null)
+  const [filter, setFilter] = useState('all')
 
   if (!business) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <div className="text-5xl mb-4">📋</div>
         <p className="text-gray-500 mb-4">Primero debes configurar un negocio</p>
-        <Link
-          to="/business"
-          className="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
-        >
+        <Link to="/business" className="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
           Ir a Mi Negocio
         </Link>
       </div>
     )
   }
 
-  const getServiceName = (serviceId) => {
-    const service = services.find((s) => s.id === serviceId)
-    return service?.name ?? 'Servicio desconocido'
+  const getServiceName = (serviceId) => services.find((s) => s.id === serviceId)?.name ?? 'Servicio'
+
+  const formatDate = (iso) => new Date(iso).toLocaleDateString('es', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+  const formatTime = (iso) => new Date(iso).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
+
+  const handleStatusChange = async (id, newStatus) => {
+    setUpdating(id)
+    try {
+      await updateAppointmentStatus(id, business.id, newStatus)
+      refreshAppointments()
+    } catch {}
+    setUpdating(null)
   }
 
-  const formatDate = (iso) => {
-    const d = new Date(iso)
-    return d.toLocaleDateString('es', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    })
+  const filtered = filter === 'all' ? appointments : appointments.filter((a) => a.status === filter)
+  const sorted = [...filtered].sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate))
+
+  const statusBadge = (status) => {
+    const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.Pending
+    return (
+      <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${cfg.bg}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+        {cfg.label}
+      </span>
+    )
   }
 
-  const formatTime = (iso) => {
-    const d = new Date(iso)
-    return d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
+  const statusActions = (a) => {
+    if (updating === a.id) return <span className="text-xs text-gray-400">...</span>
+    const actions = []
+    if (a.status === 'Pending') {
+      actions.push({ label: 'Confirmar', status: 'Confirmed', cls: 'text-blue-600 hover:text-blue-800' })
+      actions.push({ label: 'Cancelar', status: 'Cancelled', cls: 'text-red-500 hover:text-red-700' })
+    }
+    if (a.status === 'Confirmed') {
+      actions.push({ label: 'Completar', status: 'Completed', cls: 'text-green-600 hover:text-green-800' })
+      actions.push({ label: 'Cancelar', status: 'Cancelled', cls: 'text-red-500 hover:text-red-700' })
+    }
+    return (
+      <div className="flex gap-2">
+        {actions.map((act) => (
+          <button key={act.status} onClick={() => handleStatusChange(a.id, act.status)} className={`text-xs font-medium ${act.cls}`}>
+            {act.label}
+          </button>
+        ))}
+      </div>
+    )
   }
-
-  const isPast = (iso) => new Date(iso) < new Date()
-
-  const sorted = [...appointments].sort(
-    (a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate)
-  )
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Citas</h1>
           <p className="text-gray-500 text-sm">{appointments.length} citas registradas</p>
         </div>
-        <button
-          onClick={refreshAppointments}
-          className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
-        >
+        <button onClick={refreshAppointments} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
           Actualizar
         </button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-lg w-fit flex-wrap">
+        {[{ key: 'all', label: 'Todas' }, ...Object.entries(STATUS_CONFIG).map(([k, v]) => ({ key: k, label: v.label }))].map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              filter === f.key ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       {sorted.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <div className="text-5xl mb-4">📭</div>
-          <p className="text-gray-500 mb-4">No hay citas registradas</p>
-          <Link
-            to="/book"
-            className="inline-block bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
-          >
-            Reservar Primera Cita
-          </Link>
+          <p className="text-gray-500 mb-4">{filter === 'all' ? 'No hay citas registradas' : 'No hay citas con este estado'}</p>
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          {/* Desktop table */}
           <table className="w-full hidden sm:table">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
@@ -81,64 +117,35 @@ export default function AppointmentsList() {
                 <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">Servicio</th>
                 <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">Fecha</th>
                 <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">Hora</th>
-                <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">Duración</th>
                 <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">Estado</th>
+                <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {sorted.map((a) => (
                 <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3 text-sm font-medium text-gray-800">
-                    {a.customerName}
-                  </td>
-                  <td className="px-5 py-3 text-sm text-gray-600">
-                    {getServiceName(a.serviceId)}
-                  </td>
-                  <td className="px-5 py-3 text-sm text-gray-600">
-                    {formatDate(a.appointmentDate)}
-                  </td>
-                  <td className="px-5 py-3 text-sm text-gray-600">
-                    {formatTime(a.appointmentDate)} — {formatTime(a.endTime)}
-                  </td>
-                  <td className="px-5 py-3 text-sm text-gray-600">{a.durationMinutes} min</td>
-                  <td className="px-5 py-3">
-                    {isPast(a.appointmentDate) ? (
-                      <span className="inline-block bg-gray-100 text-gray-500 text-xs px-2.5 py-1 rounded-full">
-                        Pasada
-                      </span>
-                    ) : (
-                      <span className="inline-block bg-green-50 text-green-700 text-xs px-2.5 py-1 rounded-full">
-                        Activa
-                      </span>
-                    )}
-                  </td>
+                  <td className="px-5 py-3 text-sm font-medium text-gray-800">{a.customerName}</td>
+                  <td className="px-5 py-3 text-sm text-gray-600">{getServiceName(a.serviceId)}</td>
+                  <td className="px-5 py-3 text-sm text-gray-600">{formatDate(a.appointmentDate)}</td>
+                  <td className="px-5 py-3 text-sm text-gray-600">{formatTime(a.appointmentDate)} — {formatTime(a.endTime)}</td>
+                  <td className="px-5 py-3">{statusBadge(a.status)}</td>
+                  <td className="px-5 py-3">{statusActions(a)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          {/* Mobile cards */}
+          {/* Mobile */}
           <div className="sm:hidden divide-y divide-gray-100">
             {sorted.map((a) => (
               <div key={a.id} className="p-4 space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="font-medium text-gray-800">{a.customerName}</span>
-                  {isPast(a.appointmentDate) ? (
-                    <span className="bg-gray-100 text-gray-500 text-xs px-2.5 py-1 rounded-full">
-                      Pasada
-                    </span>
-                  ) : (
-                    <span className="bg-green-50 text-green-700 text-xs px-2.5 py-1 rounded-full">
-                      Activa
-                    </span>
-                  )}
+                  {statusBadge(a.status)}
                 </div>
-                <div className="text-sm text-gray-500">
-                  {getServiceName(a.serviceId)} · {a.durationMinutes} min
-                </div>
-                <div className="text-sm text-gray-500">
-                  {formatDate(a.appointmentDate)} · {formatTime(a.appointmentDate)}
-                </div>
+                <div className="text-sm text-gray-500">{getServiceName(a.serviceId)} · {a.durationMinutes} min</div>
+                <div className="text-sm text-gray-500">{formatDate(a.appointmentDate)} · {formatTime(a.appointmentDate)}</div>
+                <div className="pt-1">{statusActions(a)}</div>
               </div>
             ))}
           </div>

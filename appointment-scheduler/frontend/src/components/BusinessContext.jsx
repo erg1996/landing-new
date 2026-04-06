@@ -94,7 +94,7 @@ export function BusinessProvider({ children }) {
     if (!business) return
     try {
       const data = await getAppointments(business.id)
-      setAppointments(data)
+      setAppointments(data.items ?? data)
     } catch {
       setAppointments([])
     }

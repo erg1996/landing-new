@@ -30,6 +30,13 @@ public class AuthService
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
     {
+        // Validate password complexity
+        ValidatePassword(request.Password);
+
+        // Validate email format
+        if (!request.Email.Contains('@') || request.Email.Length < 5)
+            throw new ConflictException("Invalid email format.");
+
         var existing = await _userRepository.GetByEmailAsync(request.Email);
         if (existing != null)
             throw new ConflictException("An account with this email already exists.");
@@ -88,6 +95,18 @@ public class AuthService
 
         var token = GenerateToken(user);
         return new AuthResponse(token, user.Id, user.Email, user.FullName, business.Id, business.Name, business.Slug);
+    }
+
+    private static void ValidatePassword(string password)
+    {
+        if (password.Length < 8)
+            throw new ConflictException("Password must be at least 8 characters.");
+        if (!password.Any(char.IsUpper))
+            throw new ConflictException("Password must contain at least one uppercase letter.");
+        if (!password.Any(char.IsLower))
+            throw new ConflictException("Password must contain at least one lowercase letter.");
+        if (!password.Any(char.IsDigit))
+            throw new ConflictException("Password must contain at least one number.");
     }
 
     private string GenerateToken(User user)

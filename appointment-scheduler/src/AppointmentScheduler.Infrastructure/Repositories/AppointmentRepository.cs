@@ -20,6 +20,18 @@ public class AppointmentRepository : IAppointmentRepository
             .OrderBy(a => a.AppointmentDate)
             .ToListAsync();
 
+    public async Task<(List<Appointment> Items, int Total)> GetPaginatedByBusinessIdAsync(Guid businessId, int page, int pageSize)
+    {
+        var query = _context.Appointments.Where(a => a.BusinessId == businessId);
+        var total = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(a => a.AppointmentDate)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        return (items, total);
+    }
+
     public async Task<List<Appointment>> GetByBusinessIdAndDateAsync(Guid businessId, DateTime date) =>
         await _context.Appointments
             .Where(a => a.BusinessId == businessId && a.AppointmentDate.Date == date.Date)

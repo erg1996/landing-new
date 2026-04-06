@@ -31,6 +31,9 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.HasIndex(e => e.BusinessId);
+            // Global query filter: soft delete
+            entity.HasQueryFilter(e => !e.IsDeleted);
             entity.HasOne(e => e.Business)
                 .WithMany(b => b.Services)
                 .HasForeignKey(e => e.BusinessId)
@@ -41,8 +44,12 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.CustomerName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.CustomerEmail).HasMaxLength(200);
+            entity.Property(e => e.CustomerPhone).HasMaxLength(30);
+            entity.Property(e => e.Status).HasConversion<int>().HasDefaultValue(AppointmentStatus.Pending);
             entity.Ignore(e => e.EndTime);
             entity.HasIndex(e => new { e.BusinessId, e.AppointmentDate });
+            entity.HasIndex(e => e.ServiceId);
             entity.HasOne(e => e.Business)
                 .WithMany(b => b.Appointments)
                 .HasForeignKey(e => e.BusinessId)
@@ -90,6 +97,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<UserBusiness>(entity =>
         {
             entity.HasKey(e => new { e.UserId, e.BusinessId });
+            entity.HasIndex(e => e.BusinessId);
             entity.HasOne(e => e.User)
                 .WithMany(u => u.UserBusinesses)
                 .HasForeignKey(e => e.UserId)

@@ -1,11 +1,14 @@
+using System.Threading.RateLimiting;
 using AppointmentScheduler.Application.DTOs;
 using AppointmentScheduler.Application.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AppointmentScheduler.API.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("auth")]
 public class AuthController : ControllerBase
 {
     private readonly AuthService _authService;

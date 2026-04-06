@@ -49,7 +49,7 @@ public class AppointmentServiceTests
         _appointmentRepo.Setup(r => r.GetByBusinessIdAndDateAsync(_businessId, date))
             .ReturnsAsync(new List<Appointment>());
 
-        var request = new CreateAppointmentRequest(_businessId, _serviceId, "John Doe", null, date);
+        var request = new CreateAppointmentRequest(_businessId, _serviceId, "John Doe", null, null, date);
         var result = await _sut.CreateAsync(request);
 
         Assert.Equal("John Doe", result.CustomerName);
@@ -69,7 +69,7 @@ public class AppointmentServiceTests
                 new() { AppointmentDate = date, DurationMinutes = 30 } // 10:00-10:30
             });
 
-        var request = new CreateAppointmentRequest(_businessId, _serviceId, "Jane Doe", null, date);
+        var request = new CreateAppointmentRequest(_businessId, _serviceId, "Jane Doe", null, null, date);
 
         await Assert.ThrowsAsync<ConflictException>(() => _sut.CreateAsync(request));
     }
@@ -84,7 +84,7 @@ public class AppointmentServiceTests
                 new() { AppointmentDate = date.AddMinutes(-15), DurationMinutes = 30 } // 9:45-10:15
             });
 
-        var request = new CreateAppointmentRequest(_businessId, _serviceId, "Jane Doe", null, date);
+        var request = new CreateAppointmentRequest(_businessId, _serviceId, "Jane Doe", null, null, date);
 
         await Assert.ThrowsAsync<ConflictException>(() => _sut.CreateAsync(request));
     }
@@ -100,7 +100,7 @@ public class AppointmentServiceTests
                 new() { AppointmentDate = date.AddMinutes(-30), DurationMinutes = 30 } // 10:00-10:30
             });
 
-        var request = new CreateAppointmentRequest(_businessId, _serviceId, "John Doe", null, date);
+        var request = new CreateAppointmentRequest(_businessId, _serviceId, "John Doe", null, null, date);
         var result = await _sut.CreateAsync(request);
 
         Assert.Equal(date, result.AppointmentDate);
@@ -114,7 +114,7 @@ public class AppointmentServiceTests
         _appointmentRepo.Setup(r => r.GetByBusinessIdAndDateAsync(_businessId, date))
             .ReturnsAsync(new List<Appointment>());
 
-        var request = new CreateAppointmentRequest(_businessId, _serviceId, "Jane Doe", null, date);
+        var request = new CreateAppointmentRequest(_businessId, _serviceId, "Jane Doe", null, null, date);
 
         await Assert.ThrowsAsync<ConflictException>(() => _sut.CreateAsync(request));
     }
@@ -131,7 +131,7 @@ public class AppointmentServiceTests
             .ReturnsAsync(new List<WorkingHours>());
 
         var date = new DateTime(2026, 4, 5, 10, 0, 0); // Sunday
-        var request = new CreateAppointmentRequest(sundayBusinessId, _serviceId, "Jane Doe", null, date);
+        var request = new CreateAppointmentRequest(sundayBusinessId, _serviceId, "Jane Doe", null, null, date);
 
         await Assert.ThrowsAsync<ConflictException>(() => _sut.CreateAsync(request));
     }

@@ -66,10 +66,26 @@ export default function Register() {
               value={form.password}
               onChange={update('password')}
               required
-              minLength={6}
-              placeholder="Mínimo 6 caracteres"
+              minLength={8}
+              placeholder="Min 8 chars, mayuscula, minuscula, numero"
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
             />
+            {form.password && (
+              <div className="mt-1.5 space-y-0.5 text-xs">
+                <p className={form.password.length >= 8 ? 'text-green-600' : 'text-gray-400'}>
+                  {form.password.length >= 8 ? '\u2713' : '\u2022'} 8+ caracteres
+                </p>
+                <p className={/[A-Z]/.test(form.password) ? 'text-green-600' : 'text-gray-400'}>
+                  {/[A-Z]/.test(form.password) ? '\u2713' : '\u2022'} Una mayuscula
+                </p>
+                <p className={/[a-z]/.test(form.password) ? 'text-green-600' : 'text-gray-400'}>
+                  {/[a-z]/.test(form.password) ? '\u2713' : '\u2022'} Una minuscula
+                </p>
+                <p className={/\d/.test(form.password) ? 'text-green-600' : 'text-gray-400'}>
+                  {/\d/.test(form.password) ? '\u2713' : '\u2022'} Un numero
+                </p>
+              </div>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del negocio</label>

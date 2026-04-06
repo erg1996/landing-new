@@ -29,11 +29,24 @@ public class AppointmentsController : ControllerBase
 
     [Authorize]
     [HttpGet]
-    public async Task<IActionResult> GetByBusiness([FromQuery] Guid businessId)
+    public async Task<IActionResult> GetByBusiness(
+        [FromQuery] Guid businessId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
     {
         var userId = User.GetUserId();
         await _businessService.ValidateOwnershipAsync(userId, businessId);
-        var results = await _appointmentService.GetByBusinessIdAsync(businessId);
+        var results = await _appointmentService.GetByBusinessIdAsync(businessId, page, pageSize);
         return Ok(results);
+    }
+
+    [Authorize]
+    [HttpPatch("{id:guid}/status")]
+    public async Task<IActionResult> UpdateStatus(Guid id, [FromQuery] Guid businessId, [FromBody] UpdateAppointmentStatusRequest request)
+    {
+        var userId = User.GetUserId();
+        await _businessService.ValidateOwnershipAsync(userId, businessId);
+        var result = await _appointmentService.UpdateStatusAsync(id, businessId, request.Status);
+        return Ok(result);
     }
 }

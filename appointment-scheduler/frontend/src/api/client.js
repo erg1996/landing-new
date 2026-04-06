@@ -16,21 +16,24 @@ async function request(path, options = {}, authenticated = false) {
   if (authenticated) {
     const token = getToken()
     if (token) headers['Authorization'] = `Bearer ${token}`
-    else console.warn('[API] No token found for authenticated request:', path)
   }
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
+
+  // Handle expired/invalid token — redirect to login
+  if (res.status === 401 && authenticated) {
+    localStorage.removeItem('auth')
+    localStorage.removeItem('activeBusiness')
+    window.location.href = '/login'
+    throw new Error('Session expired')
+  }
+
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    console.error(`[API] ${path} → ${res.status}:`, body)
     throw new Error(body.error ?? `HTTP ${res.status}`)
   }
   if (res.status === 204) return null
-  const data = await res.json()
-  if (path === '/api/business') {
-    console.log('[API] GET /api/business response:', JSON.stringify(data))
-  }
-  return data
+  return res.json()
 }
 
 // Authenticated request shorthand
@@ -53,7 +56,6 @@ export const updateBusiness = (id, data) =>
   authRequest(`/api/business/${id}`, { method: 'PUT', body: JSON.stringify(data) })
 
 // ─── Services ────────────────────────────────────────────────────────────────
-// GET services is public (needed for public booking page)
 export const getServices = (businessId) =>
   publicRequest(`/api/services?businessId=${businessId}`)
 
@@ -100,12 +102,17 @@ export const login = (data) =>
   publicRequest('/api/auth/login', { method: 'POST', body: JSON.stringify(data) })
 
 // ─── Appointments ─────────────────────────────────────────────────────────────
-// POST is public (customers booking from public page)
 export const createAppointment = (data) =>
   publicRequest('/api/appointments', { method: 'POST', body: JSON.stringify(data) })
 
-export const getAppointments = (businessId) =>
-  authRequest(`/api/appointments?businessId=${businessId}`)
+export const getAppointments = (businessId, page = 1, pageSize = 50) =>
+  authRequest(`/api/appointments?businessId=${businessId}&page=${page}&pageSize=${pageSize}`)
+
+export const updateAppointmentStatus = (id, businessId, status) =>
+  authRequest(`/api/appointments/${id}/status?businessId=${businessId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  })
 
 // ─── Analytics ────────────────────────────────────────────────────────────────
 export const getDashboardAnalytics = (businessId) =>
