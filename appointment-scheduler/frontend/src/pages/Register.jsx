@@ -21,6 +21,7 @@ export default function Register() {
     try {
       const result = await register(form)
       saveAuth(result)
+      localStorage.removeItem('activeBusiness')
       setBusiness({
         id: result.businessId,
         name: result.businessName,

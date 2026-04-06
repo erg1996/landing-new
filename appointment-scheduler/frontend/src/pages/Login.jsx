@@ -20,6 +20,8 @@ export default function Login() {
     try {
       const result = await login({ email, password })
       saveAuth(result)
+      // Clear any stale business from previous user, then set the new one
+      localStorage.removeItem('activeBusiness')
       setBusiness({
         id: result.businessId,
         name: result.businessName,

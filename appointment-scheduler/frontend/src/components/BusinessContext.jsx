@@ -1,15 +1,27 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { getServices, getAppointments } from '../api/client'
+import { useAuth } from './AuthContext'
 
 const BusinessContext = createContext(null)
 
 export function BusinessProvider({ children }) {
+  const { auth } = useAuth()
   const [business, setBusiness] = useState(() => {
     const saved = localStorage.getItem('activeBusiness')
     return saved ? JSON.parse(saved) : null
   })
   const [services, setServices] = useState([])
   const [appointments, setAppointments] = useState([])
+
+  // Clear business when user changes (login/logout)
+  useEffect(() => {
+    if (!auth) {
+      setBusiness(null)
+      localStorage.removeItem('activeBusiness')
+      setServices([])
+      setAppointments([])
+    }
+  }, [auth?.userId])
 
   useEffect(() => {
     if (business) {
