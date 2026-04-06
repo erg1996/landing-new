@@ -11,8 +11,13 @@ namespace AppointmentScheduler.API.Controllers;
 public class BusinessController : ControllerBase
 {
     private readonly BusinessService _service;
+    private readonly ILogger<BusinessController> _logger;
 
-    public BusinessController(BusinessService service) => _service = service;
+    public BusinessController(BusinessService service, ILogger<BusinessController> logger)
+    {
+        _service = service;
+        _logger = logger;
+    }
 
     // Public: used by public booking page
     [HttpGet("slug/{slug}")]
@@ -39,7 +44,10 @@ public class BusinessController : ControllerBase
     public async Task<IActionResult> GetMyBusinesses()
     {
         var userId = User.GetUserId();
+        _logger.LogWarning("[SECURITY] GetMyBusinesses called by userId={UserId}", userId);
         var results = await _service.GetAllByUserIdAsync(userId);
+        _logger.LogWarning("[SECURITY] Returning {Count} businesses for userId={UserId}: {Names}",
+            results.Count, userId, string.Join(", ", results.Select(r => r.Name)));
         return Ok(results);
     }
 

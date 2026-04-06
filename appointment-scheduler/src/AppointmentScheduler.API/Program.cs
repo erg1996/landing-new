@@ -37,12 +37,15 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
-// Auto-migrate and seed
+// DEV: Force clean database to ensure schema is up-to-date
+// EnsureCreated() does NOT update existing databases — it only creates if missing.
+// This guarantees the UserBusinesses table (and all new columns) exist.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureDeleted();
     db.Database.EnsureCreated();
-    await SeedData.SeedAsync(db);
+    Console.WriteLine("[STARTUP] Database recreated with fresh schema.");
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();

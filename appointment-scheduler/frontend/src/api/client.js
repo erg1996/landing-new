@@ -16,15 +16,21 @@ async function request(path, options = {}, authenticated = false) {
   if (authenticated) {
     const token = getToken()
     if (token) headers['Authorization'] = `Bearer ${token}`
+    else console.warn('[API] No token found for authenticated request:', path)
   }
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
+    console.error(`[API] ${path} → ${res.status}:`, body)
     throw new Error(body.error ?? `HTTP ${res.status}`)
   }
   if (res.status === 204) return null
-  return res.json()
+  const data = await res.json()
+  if (path === '/api/business') {
+    console.log('[API] GET /api/business response:', JSON.stringify(data))
+  }
+  return data
 }
 
 // Authenticated request shorthand
