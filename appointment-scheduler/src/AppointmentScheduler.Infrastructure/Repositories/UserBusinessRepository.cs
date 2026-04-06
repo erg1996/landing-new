@@ -12,11 +12,9 @@ public class UserBusinessRepository : IUserBusinessRepository
     public UserBusinessRepository(AppDbContext context) => _context = context;
 
     public async Task<List<Business>> GetBusinessesByUserIdAsync(Guid userId) =>
-        await _context.UserBusinesses
-            .Where(ub => ub.UserId == userId)
-            .Include(ub => ub.Business)
-            .OrderByDescending(ub => ub.CreatedAt)
-            .Select(ub => ub.Business)
+        await _context.Businesses
+            .Where(b => _context.UserBusinesses.Any(ub => ub.UserId == userId && ub.BusinessId == b.Id))
+            .OrderByDescending(b => b.CreatedAt)
             .ToListAsync();
 
     public async Task<bool> HasAccessAsync(Guid userId, Guid businessId) =>

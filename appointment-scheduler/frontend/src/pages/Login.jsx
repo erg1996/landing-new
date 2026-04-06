@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../components/AuthContext'
-import { useBusiness } from '../components/BusinessContext'
 import { login } from '../api/client'
 
 export default function Login() {
   const { saveAuth } = useAuth()
-  const { setBusiness } = useBusiness()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,14 +17,9 @@ export default function Login() {
     setError('')
     try {
       const result = await login({ email, password })
-      saveAuth(result)
-      // Clear any stale business from previous user, then set the new one
+      // saveAuth triggers BusinessContext to load businesses from API
       localStorage.removeItem('activeBusiness')
-      setBusiness({
-        id: result.businessId,
-        name: result.businessName,
-        slug: result.businessSlug,
-      })
+      saveAuth(result)
       navigate('/')
     } catch (err) {
       setError(err.message)

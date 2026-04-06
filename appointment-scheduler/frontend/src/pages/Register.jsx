@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../components/AuthContext'
-import { useBusiness } from '../components/BusinessContext'
 import { register } from '../api/client'
 
 export default function Register() {
   const { saveAuth } = useAuth()
-  const { setBusiness } = useBusiness()
   const navigate = useNavigate()
   const [form, setForm] = useState({ fullName: '', email: '', password: '', businessName: '' })
   const [loading, setLoading] = useState(false)
@@ -20,13 +18,9 @@ export default function Register() {
     setError('')
     try {
       const result = await register(form)
-      saveAuth(result)
+      // saveAuth triggers BusinessContext to load businesses from API
       localStorage.removeItem('activeBusiness')
-      setBusiness({
-        id: result.businessId,
-        name: result.businessName,
-        slug: result.businessSlug,
-      })
+      saveAuth(result)
       navigate('/')
     } catch (err) {
       setError(err.message)

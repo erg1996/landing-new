@@ -1,25 +1,70 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import { getServices, getAppointments } from '../api/client'
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
+import { getServices, getAppointments, getAllBusinesses } from '../api/client'
 import { useAuth } from './AuthContext'
 
 const BusinessContext = createContext(null)
 
 export function BusinessProvider({ children }) {
   const { auth } = useAuth()
-  const [business, setBusiness] = useState(() => {
-    const saved = localStorage.getItem('activeBusiness')
-    return saved ? JSON.parse(saved) : null
-  })
+  const prevUserIdRef = useRef(auth?.userId)
+  const [business, setBusiness] = useState(null)
   const [services, setServices] = useState([])
   const [appointments, setAppointments] = useState([])
 
-  // Clear business when user changes (login/logout)
+  // When auth changes, validate the active business belongs to this user
   useEffect(() => {
+    const prevUserId = prevUserIdRef.current
+    prevUserIdRef.current = auth?.userId
+
     if (!auth) {
+      // Logged out — clear everything
       setBusiness(null)
       localStorage.removeItem('activeBusiness')
       setServices([])
       setAppointments([])
+      return
+    }
+
+    if (prevUserId !== auth.userId) {
+      // Different user logged in — clear stale business and validate from API
+      localStorage.removeItem('activeBusiness')
+      setBusiness(null)
+      setServices([])
+      setAppointments([])
+
+      // Load businesses from API to set the correct one for this user
+      getAllBusinesses()
+        .then((businesses) => {
+          if (businesses.length > 0) {
+            setBusiness(businesses[0])
+          }
+        })
+        .catch(() => {})
+    } else {
+      // Same user, try to restore from localStorage
+      const saved = localStorage.getItem('activeBusiness')
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          // Validate it actually belongs to the user via API
+          getAllBusinesses()
+            .then((businesses) => {
+              const found = businesses.find((b) => b.id === parsed.id)
+              if (found) {
+                setBusiness(found)
+              } else if (businesses.length > 0) {
+                setBusiness(businesses[0])
+              } else {
+                localStorage.removeItem('activeBusiness')
+              }
+            })
+            .catch(() => {
+              localStorage.removeItem('activeBusiness')
+            })
+        } catch {
+          localStorage.removeItem('activeBusiness')
+        }
+      }
     }
   }, [auth?.userId])
 
