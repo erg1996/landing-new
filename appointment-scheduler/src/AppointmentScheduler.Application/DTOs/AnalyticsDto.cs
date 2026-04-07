@@ -4,6 +4,7 @@ public record DashboardAnalytics(
     int TotalAppointments,
     int TotalServices,
     int TodayAppointments,
+    int CancelledAppointments,
     ServiceStat? TopService,
     HourStat? BusiestHour,
     HourStat? QuietestHour);

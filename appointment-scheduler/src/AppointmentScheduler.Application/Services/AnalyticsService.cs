@@ -1,5 +1,6 @@
 using AppointmentScheduler.Application.DTOs;
 using AppointmentScheduler.Application.Interfaces;
+using AppointmentScheduler.Domain.Entities;
 
 namespace AppointmentScheduler.Application.Services;
 
@@ -16,16 +17,21 @@ public class AnalyticsService
 
     public async Task<DashboardAnalytics> GetDashboardAsync(Guid businessId)
     {
-        var appointments = await _appointmentRepository.GetByBusinessIdAsync(businessId);
+        var allAppointments = await _appointmentRepository.GetByBusinessIdAsync(businessId);
         var services = await _serviceRepository.GetByBusinessIdAsync(businessId);
         var today = DateTime.UtcNow.Date;
-        var todayAppointments = appointments.Count(a => a.AppointmentDate.Date == today);
 
-        // Top service by appointment count
+        var cancelled = allAppointments.Count(a => a.Status == AppointmentStatus.Cancelled);
+        // Exclude cancelled from all stats
+        var active = allAppointments.Where(a => a.Status != AppointmentStatus.Cancelled).ToList();
+
+        var todayAppointments = active.Count(a => a.AppointmentDate.Date == today);
+
+        // Top service by appointment count (active only)
         ServiceStat? topService = null;
-        if (appointments.Count > 0)
+        if (active.Count > 0)
         {
-            var grouped = appointments
+            var grouped = active
                 .GroupBy(a => a.ServiceId)
                 .OrderByDescending(g => g.Count())
                 .First();
@@ -33,12 +39,12 @@ public class AnalyticsService
             topService = new ServiceStat(svc?.Name ?? "Desconocido", grouped.Count());
         }
 
-        // Busiest and quietest hours
+        // Busiest and quietest hours (active only)
         HourStat? busiestHour = null;
         HourStat? quietestHour = null;
-        if (appointments.Count > 0)
+        if (active.Count > 0)
         {
-            var hourGroups = appointments
+            var hourGroups = active
                 .GroupBy(a => a.AppointmentDate.Hour)
                 .Select(g => new HourStat(g.Key, g.Count()))
                 .OrderByDescending(h => h.Count)
@@ -49,9 +55,10 @@ public class AnalyticsService
         }
 
         return new DashboardAnalytics(
-            appointments.Count,
+            active.Count,
             services.Count,
             todayAppointments,
+            cancelled,
             topService,
             busiestHour,
             quietestHour);

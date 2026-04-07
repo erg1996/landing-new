@@ -55,7 +55,7 @@ export default function BookingConfirmation() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-xl font-bold text-white">¡Cita Confirmada!</h1>
+            <h1 className="text-xl font-bold text-white">¡Cita Agendada!</h1>
             <p className="text-white/80 text-sm mt-1">{state.business}</p>
           </div>
 

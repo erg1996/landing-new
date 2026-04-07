@@ -49,18 +49,18 @@ public class SmtpEmailService : IEmailService
             ? $"<img src='{logoUrl}' alt='{businessName}' style='width:60px;height:60px;border-radius:12px;object-fit:cover;margin-bottom:12px;border:2px solid rgba(255,255,255,0.3);'/><br/>"
             : "";
 
-        var subject = $"Confirmación de cita - {businessName}";
+        var subject = $"Cita agendada - {businessName}";
         var body = $@"
 <html>
 <body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
     <div style='background: {headerColor}; color: white; padding: 24px 20px; border-radius: 12px 12px 0 0; text-align: center;'>
         {logoHtml}
         <h1 style='margin: 0; font-size: 24px;'>{businessName}</h1>
-        <p style='margin: 5px 0 0; opacity: 0.9;'>Confirmación de Cita</p>
+        <p style='margin: 5px 0 0; opacity: 0.9;'>Cita Agendada</p>
     </div>
     <div style='background: #F9FAFB; padding: 24px; border: 1px solid #E5E7EB; border-top: none; border-radius: 0 0 12px 12px;'>
         <p style='color: #374151; font-size: 16px;'>Hola <strong>{customerName}</strong>,</p>
-        <p style='color: #6B7280;'>Tu cita ha sido confirmada con los siguientes detalles:</p>
+        <p style='color: #6B7280;'>Tu cita ha sido agendada y esta pendiente de confirmacion:</p>
         <div style='background: white; border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px; margin: 16px 0;'>
             <table style='width: 100%; border-collapse: collapse;'>
                 <tr>
