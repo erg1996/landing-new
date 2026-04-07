@@ -39,7 +39,7 @@ public static class DependencyInjection
             var userRepo = sp.GetRequiredService<IUserRepository>();
             var bizRepo = sp.GetRequiredService<IBusinessRepository>();
             var userBizRepo = sp.GetRequiredService<IUserBusinessRepository>();
-            var jwtSecret = configuration["Jwt:Secret"] ?? "SchedulePro-Default-Secret-Key-Change-In-Production-Min32Chars!";
+            var jwtSecret = configuration["Jwt:Secret"] ?? "DEV-ONLY-SECRET-KEY-CHANGE-IN-PRODUCTION-Min32Chars!!";
             return new AuthService(userRepo, bizRepo, userBizRepo, jwtSecret);
         });
 
