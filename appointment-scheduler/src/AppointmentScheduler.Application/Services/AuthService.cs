@@ -122,8 +122,8 @@ public class AuthService
         };
 
         var token = new JwtSecurityToken(
-            issuer: "SchedulePro",
-            audience: "SchedulePro",
+            issuer: "AgendaYa",
+            audience: "AgendaYa",
             claims: claims,
             expires: DateTime.UtcNow.AddHours(24),
             signingCredentials: credentials

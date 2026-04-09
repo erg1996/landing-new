@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../components/AuthContext'
 import { login } from '../api/client'
+import { AgendaYaLogo } from '../components/Icons'
 
 export default function Login() {
   const { saveAuth } = useAuth()
@@ -32,7 +33,10 @@ export default function Login() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="max-w-sm w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-indigo-600">SchedulePro</h1>
+          <div className="flex items-center justify-center gap-2 text-indigo-600">
+            <AgendaYaLogo className="w-8 h-8" />
+            <h1 className="text-3xl font-bold">AgendaYa</h1>
+          </div>
           <p className="text-gray-500 mt-2">Inicia sesión en tu cuenta</p>
         </div>
         <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">

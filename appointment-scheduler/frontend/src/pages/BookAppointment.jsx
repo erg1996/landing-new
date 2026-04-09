@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useBusiness } from '../components/BusinessContext'
 import { getAvailability, createAppointment } from '../api/client'
 import { Link } from 'react-router-dom'
+import { CalendarIcon, SettingsIcon } from '../components/Icons'
 
 export default function BookAppointment() {
   const { business, services, refreshAppointments } = useBusiness()
@@ -19,7 +20,7 @@ export default function BookAppointment() {
   if (!business) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <div className="text-5xl mb-4">📅</div>
+        <CalendarIcon className="w-14 h-14 text-gray-300 mb-4" />
         <p className="text-gray-500 mb-4">Primero debes configurar un negocio</p>
         <Link
           to="/business"
@@ -34,7 +35,7 @@ export default function BookAppointment() {
   if (services.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <div className="text-5xl mb-4">⚙️</div>
+        <SettingsIcon className="w-14 h-14 text-gray-300 mb-4" />
         <p className="text-gray-500 mb-4">No hay servicios registrados</p>
         <Link
           to="/business"

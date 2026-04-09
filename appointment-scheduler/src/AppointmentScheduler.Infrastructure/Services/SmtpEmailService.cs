@@ -35,8 +35,8 @@ public class SmtpEmailService : IEmailService
         }
 
         var smtpPort = int.Parse(_config["Email:SmtpPort"] ?? "587");
-        var fromEmail = _config["Email:From"] ?? "noreply@schedulepro.com";
-        var fromName = _config["Email:FromName"] ?? "SchedulePro";
+        var fromEmail = _config["Email:From"] ?? "noreply@agendaya.app";
+        var fromName = _config["Email:FromName"] ?? "AgendaYa";
         var username = _config["Email:Username"] ?? "";
         var password = _config["Email:Password"] ?? "";
 
@@ -86,7 +86,7 @@ public class SmtpEmailService : IEmailService
         </p>
     </div>
     <p style='color: #9CA3AF; font-size: 12px; text-align: center; margin-top: 16px;'>
-        Enviado por SchedulePro
+        Enviado por AgendaYa
     </p>
 </body>
 </html>";
@@ -135,8 +135,8 @@ public class SmtpEmailService : IEmailService
         }
 
         var smtpPort = int.Parse(_config["Email:SmtpPort"] ?? "587");
-        var fromEmail = _config["Email:From"] ?? "noreply@schedulepro.com";
-        var fromName = _config["Email:FromName"] ?? "SchedulePro";
+        var fromEmail = _config["Email:From"] ?? "noreply@agendaya.app";
+        var fromName = _config["Email:FromName"] ?? "AgendaYa";
         var username = _config["Email:Username"] ?? "";
         var password = _config["Email:Password"] ?? "";
 
@@ -181,7 +181,7 @@ public class SmtpEmailService : IEmailService
         </p>
     </div>
     <p style='color: #9CA3AF; font-size: 12px; text-align: center; margin-top: 16px;'>
-        Enviado por SchedulePro
+        Enviado por AgendaYa
     </p>
 </body>
 </html>";

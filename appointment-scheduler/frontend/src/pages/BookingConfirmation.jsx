@@ -1,4 +1,5 @@
 import { useLocation, useParams, Link } from 'react-router-dom'
+import { CalendarIcon } from '../components/Icons'
 
 export default function BookingConfirmation() {
   const { slug } = useParams()
@@ -9,7 +10,7 @@ export default function BookingConfirmation() {
   if (!state) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
-        <div className="text-5xl mb-4">📅</div>
+        <CalendarIcon className="w-14 h-14 text-gray-300 mb-4" />
         <p className="text-gray-500 mb-4">No hay datos de confirmación</p>
         <Link
           to={`/book/${slug}`}

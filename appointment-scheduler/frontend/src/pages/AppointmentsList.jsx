@@ -2,6 +2,7 @@ import { useBusiness } from '../components/BusinessContext'
 import { updateAppointmentStatus, updateAppointmentNotes, downloadReportCsv } from '../api/client'
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
+import { ListIcon, InboxIcon, XIcon } from '../components/Icons'
 
 const STATUS_CONFIG = {
   Pending: { label: 'Pendiente', bg: 'bg-yellow-50 text-yellow-700', dot: 'bg-yellow-400' },
@@ -22,7 +23,7 @@ export default function AppointmentsList() {
   if (!business) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <div className="text-5xl mb-4">📋</div>
+        <ListIcon className="w-14 h-14 text-gray-300 mb-4" />
         <p className="text-gray-500 mb-4">Primero debes configurar un negocio</p>
         <Link to="/business" className="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
           Ir a Mi Negocio
@@ -144,7 +145,7 @@ export default function AppointmentsList() {
 
       {sorted.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-          <div className="text-5xl mb-4">📭</div>
+          <InboxIcon className="w-14 h-14 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 mb-4">{filter === 'all' ? 'No hay citas registradas' : 'No hay citas con este estado'}</p>
         </div>
       ) : (
@@ -188,7 +189,7 @@ export default function AppointmentsList() {
                             className="text-xs text-green-600 hover:text-green-800 font-medium">
                             {savingNotes ? '...' : 'OK'}
                           </button>
-                          <button onClick={() => setEditingNotes(null)} className="text-xs text-gray-400 hover:text-gray-600">✕</button>
+                          <button onClick={() => setEditingNotes(null)} className="text-xs text-gray-400 hover:text-gray-600" aria-label="Cancelar"><XIcon className="w-3.5 h-3.5" /></button>
                         </div>
                       ) : (
                         <button
@@ -239,7 +240,7 @@ export default function AppointmentsList() {
                     />
                     <button onClick={() => saveNotes(a.id)} disabled={savingNotes}
                       className="text-xs text-green-600 font-medium">{savingNotes ? '...' : 'OK'}</button>
-                    <button onClick={() => setEditingNotes(null)} className="text-xs text-gray-400">✕</button>
+                    <button onClick={() => setEditingNotes(null)} aria-label="Cancelar" className="text-xs text-gray-400"><XIcon className="w-3.5 h-3.5" /></button>
                   </div>
                 )}
               </div>

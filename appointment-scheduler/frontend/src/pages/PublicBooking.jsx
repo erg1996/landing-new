@@ -6,6 +6,7 @@ import {
   getAvailability,
   createAppointment,
 } from '../api/client'
+import { SearchIcon } from '../components/Icons'
 
 export default function PublicBooking() {
   const { slug } = useParams()
@@ -125,7 +126,7 @@ export default function PublicBooking() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-        <div className="text-5xl mb-4">😕</div>
+        <SearchIcon className="w-14 h-14 text-gray-300 mb-4" />
         <p className="text-gray-600 text-lg">{error}</p>
       </div>
     )

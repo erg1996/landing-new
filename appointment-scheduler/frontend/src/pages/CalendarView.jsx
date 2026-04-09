@@ -1,6 +1,7 @@
 import { useBusiness } from '../components/BusinessContext'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { CalendarIcon, XIcon, ChevronLeftIcon, ChevronRightIcon } from '../components/Icons'
 
 const STATUS_COLOR = {
   Pending: 'bg-yellow-100 border-yellow-300 text-yellow-800',
@@ -65,7 +66,7 @@ export default function CalendarView() {
   if (!business) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <div className="text-5xl mb-4">📅</div>
+        <CalendarIcon className="w-14 h-14 text-gray-300 mb-4" />
         <p className="text-gray-500 mb-4">Primero debes configurar un negocio</p>
         <Link to="/business" className="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
           Ir a Mi Negocio
@@ -113,14 +114,14 @@ export default function CalendarView() {
           <p className="text-gray-500 text-sm">{weekLabel}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={prevWeek} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors">
-            ‹
+          <button onClick={prevWeek} aria-label="Semana anterior" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors">
+            <ChevronLeftIcon className="w-4 h-4" />
           </button>
           <button onClick={goToday} className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
             Hoy
           </button>
-          <button onClick={nextWeek} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors">
-            ›
+          <button onClick={nextWeek} aria-label="Semana siguiente" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors">
+            <ChevronRightIcon className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -229,7 +230,7 @@ export default function CalendarView() {
               <h3 className="font-semibold text-gray-800 text-lg">{selectedAppt.customerName}</h3>
               <p className="text-gray-500 text-sm">{getServiceName(selectedAppt.serviceId)} · {selectedAppt.durationMinutes} min</p>
             </div>
-            <button onClick={() => setSelectedAppt(null)} className="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+            <button onClick={() => setSelectedAppt(null)} aria-label="Cerrar" className="text-gray-400 hover:text-gray-600"><XIcon className="w-5 h-5" /></button>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
             <div>

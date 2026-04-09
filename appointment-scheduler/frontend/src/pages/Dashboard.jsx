@@ -2,6 +2,17 @@ import { useBusiness } from '../components/BusinessContext'
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { getDashboardAnalytics } from '../api/client'
+import {
+  StoreIcon,
+  ClockIcon,
+  CalendarIcon,
+  CalendarDaysIcon,
+  SettingsIcon,
+  CheckCircleIcon,
+  FlagIcon,
+  BanIcon,
+  DollarIcon,
+} from '../components/Icons'
 
 export default function Dashboard() {
   const { business, services, appointments } = useBusiness()
@@ -16,8 +27,8 @@ export default function Dashboard() {
   if (!business) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <div className="text-6xl mb-6">🏪</div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Bienvenido a SchedulePro</h1>
+        <StoreIcon className="w-16 h-16 text-indigo-400 mb-6" />
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Bienvenido a AgendaYa</h1>
         <p className="text-gray-500 mb-6">Configura tu negocio para comenzar a recibir citas</p>
         <Link to="/business" className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
           Crear Negocio
@@ -35,10 +46,10 @@ export default function Dashboard() {
 
   // Row 1 — temporal metrics
   const timeStats = [
-    { label: 'Hoy', value: analytics?.todayAppointments ?? todayActive.length, icon: '📌', color: 'bg-amber-50 text-amber-700' },
-    { label: 'Esta Semana', value: analytics?.weekAppointments ?? 0, icon: '📆', color: 'bg-blue-50 text-blue-700' },
-    { label: 'Este Mes', value: analytics?.monthAppointments ?? 0, icon: '🗓', color: 'bg-indigo-50 text-indigo-700' },
-    { label: 'Servicios', value: analytics?.totalServices ?? services.length, icon: '⚙️', color: 'bg-gray-50 text-gray-700' },
+    { label: 'Hoy', value: analytics?.todayAppointments ?? todayActive.length, Icon: ClockIcon, color: 'bg-amber-50 text-amber-700' },
+    { label: 'Esta Semana', value: analytics?.weekAppointments ?? 0, Icon: CalendarIcon, color: 'bg-blue-50 text-blue-700' },
+    { label: 'Este Mes', value: analytics?.monthAppointments ?? 0, Icon: CalendarDaysIcon, color: 'bg-indigo-50 text-indigo-700' },
+    { label: 'Servicios', value: analytics?.totalServices ?? services.length, Icon: SettingsIcon, color: 'bg-gray-50 text-gray-700' },
   ]
 
   // Row 2 — status & revenue
@@ -47,10 +58,10 @@ export default function Dashboard() {
     : '—'
 
   const statusStats = [
-    { label: 'Activas', sub: 'Pendientes + Confirmadas', value: analytics?.activeAppointments ?? active.length, icon: '✅', color: 'bg-green-50 text-green-700' },
-    { label: 'Completadas', sub: 'Realizadas', value: analytics?.completedAppointments ?? completed.length, icon: '🏁', color: 'bg-emerald-50 text-emerald-700' },
-    { label: 'Canceladas', sub: 'No realizadas', value: analytics?.cancelledAppointments ?? cancelled.length, icon: '🚫', color: 'bg-red-50 text-red-600' },
-    { label: 'Ingresos mes', sub: 'Citas completadas', value: revenueValue, icon: '💰', color: 'bg-purple-50 text-purple-700' },
+    { label: 'Activas', sub: 'Pendientes + Confirmadas', value: analytics?.activeAppointments ?? active.length, Icon: CheckCircleIcon, color: 'bg-green-50 text-green-700' },
+    { label: 'Completadas', sub: 'Realizadas', value: analytics?.completedAppointments ?? completed.length, Icon: FlagIcon, color: 'bg-emerald-50 text-emerald-700' },
+    { label: 'Canceladas', sub: 'No realizadas', value: analytics?.cancelledAppointments ?? cancelled.length, Icon: BanIcon, color: 'bg-red-50 text-red-600' },
+    { label: 'Ingresos mes', sub: 'Citas completadas', value: revenueValue, Icon: DollarIcon, color: 'bg-purple-50 text-purple-700' },
   ]
 
   const formatHour = (hour) => {
@@ -83,23 +94,23 @@ export default function Dashboard() {
 
       {/* Row 1 — Temporal */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        {timeStats.map((s) => (
-          <div key={s.label} className={`${s.color} rounded-xl p-5 text-center`}>
-            <div className="text-2xl mb-1">{s.icon}</div>
-            <div className="text-3xl font-bold">{s.value}</div>
-            <div className="text-sm mt-1 opacity-75">{s.label}</div>
+        {timeStats.map(({ label, value, Icon, color }) => (
+          <div key={label} className={`${color} rounded-xl p-5 text-center`}>
+            <Icon className="w-7 h-7 mx-auto mb-1" />
+            <div className="text-3xl font-bold">{value}</div>
+            <div className="text-sm mt-1 opacity-75">{label}</div>
           </div>
         ))}
       </div>
 
       {/* Row 2 — Status & revenue */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {statusStats.map((s) => (
-          <div key={s.label} className={`${s.color} rounded-xl p-5 text-center`}>
-            <div className="text-2xl mb-1">{s.icon}</div>
-            <div className="text-3xl font-bold">{s.value}</div>
-            <div className="text-sm mt-1 opacity-75">{s.label}</div>
-            <div className="text-xs mt-0.5 opacity-50">{s.sub}</div>
+        {statusStats.map(({ label, sub, value, Icon, color }) => (
+          <div key={label} className={`${color} rounded-xl p-5 text-center`}>
+            <Icon className="w-7 h-7 mx-auto mb-1" />
+            <div className="text-3xl font-bold">{value}</div>
+            <div className="text-sm mt-1 opacity-75">{label}</div>
+            <div className="text-xs mt-0.5 opacity-50">{sub}</div>
           </div>
         ))}
       </div>
