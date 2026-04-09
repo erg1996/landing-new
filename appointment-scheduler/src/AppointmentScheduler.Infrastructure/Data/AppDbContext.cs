@@ -31,6 +31,7 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Price).HasColumnType("decimal(10,2)");
             entity.HasIndex(e => e.BusinessId);
             // Global query filter: soft delete
             entity.HasQueryFilter(e => !e.IsDeleted);
@@ -47,6 +48,8 @@ public class AppDbContext : DbContext
             entity.Property(e => e.CustomerEmail).HasMaxLength(200);
             entity.Property(e => e.CustomerPhone).HasMaxLength(30);
             entity.Property(e => e.Status).HasConversion<int>().HasDefaultValue(AppointmentStatus.Pending);
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+            entity.Property(e => e.ReminderSent).HasDefaultValue(false);
             entity.Ignore(e => e.EndTime);
             entity.HasIndex(e => new { e.BusinessId, e.AppointmentDate });
             entity.HasIndex(e => e.ServiceId);

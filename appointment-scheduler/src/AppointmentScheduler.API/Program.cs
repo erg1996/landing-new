@@ -1,5 +1,6 @@
 using System.Text;
 using System.Threading.RateLimiting;
+using AppointmentScheduler.API.BackgroundServices;
 using AppointmentScheduler.API.Middleware;
 using AppointmentScheduler.Infrastructure;
 using AppointmentScheduler.Infrastructure.Data;
@@ -82,6 +83,7 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.AddHealthChecks();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddHostedService<ReminderBackgroundService>();
 
 var app = builder.Build();
 
@@ -91,6 +93,8 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     if (app.Environment.IsDevelopment())
     {
+        // Schema changed (new fields: Notes, ReminderSent, Price) — recreate dev DB
+        db.Database.EnsureDeleted();
         db.Database.EnsureCreated();
     }
     else

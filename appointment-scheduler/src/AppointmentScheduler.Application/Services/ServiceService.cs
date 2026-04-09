@@ -26,19 +26,20 @@ public class ServiceService
             Id = Guid.NewGuid(),
             BusinessId = request.BusinessId,
             Name = request.Name.Trim(),
-            DurationMinutes = request.DurationMinutes
+            DurationMinutes = request.DurationMinutes,
+            Price = request.Price
         };
 
         await _serviceRepository.AddAsync(service);
         await _serviceRepository.SaveChangesAsync();
 
-        return new ServiceResponse(service.Id, service.BusinessId, service.Name, service.DurationMinutes);
+        return new ServiceResponse(service.Id, service.BusinessId, service.Name, service.DurationMinutes, service.Price);
     }
 
     public async Task<List<ServiceResponse>> GetByBusinessIdAsync(Guid businessId)
     {
         var services = await _serviceRepository.GetByBusinessIdAsync(businessId);
-        return services.Select(s => new ServiceResponse(s.Id, s.BusinessId, s.Name, s.DurationMinutes)).ToList();
+        return services.Select(s => new ServiceResponse(s.Id, s.BusinessId, s.Name, s.DurationMinutes, s.Price)).ToList();
     }
 
     public async Task DeleteAsync(Guid id, Guid businessId)

@@ -1,10 +1,14 @@
 namespace AppointmentScheduler.Application.DTOs;
 
 public record DashboardAnalytics(
-    int TotalAppointments,
+    int ActiveAppointments,       // Pending + Confirmed only
+    int CompletedAppointments,    // Completed
+    int CancelledAppointments,    // Cancelled
+    int TodayAppointments,        // active today
+    int WeekAppointments,         // active this week
+    int MonthAppointments,        // active this month
     int TotalServices,
-    int TodayAppointments,
-    int CancelledAppointments,
+    decimal MonthRevenue,         // sum of completed service prices this month
     ServiceStat? TopService,
     HourStat? BusiestHour,
     HourStat? QuietestHour);

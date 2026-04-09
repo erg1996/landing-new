@@ -114,9 +114,38 @@ export const updateAppointmentStatus = (id, businessId, status) =>
     body: JSON.stringify({ status }),
   })
 
+export const updateAppointmentNotes = (id, businessId, notes) =>
+  authRequest(`/api/appointments/${id}/notes?businessId=${businessId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ notes }),
+  })
+
 // ─── Analytics ────────────────────────────────────────────────────────────────
 export const getDashboardAnalytics = (businessId) =>
   authRequest(`/api/analytics/dashboard?businessId=${businessId}`)
+
+// ─── Reports ─────────────────────────────────────────────────────────────────
+export const downloadReportCsv = async (businessId, from, to) => {
+  const token = getToken()
+  const params = new URLSearchParams({ businessId })
+  if (from) params.append('from', from)
+  if (to) params.append('to', to)
+
+  const res = await fetch(`${BASE_URL}/api/reports/appointments.csv?${params}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  const disposition = res.headers.get('Content-Disposition') ?? ''
+  const match = disposition.match(/filename="?([^"]+)"?/)
+  a.download = match ? match[1] : 'reporte.csv'
+  a.href = url
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 // ─── Upload ───────────────────────────────────────────────────────────────────
 export const uploadLogo = async (file) => {

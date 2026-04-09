@@ -123,7 +123,21 @@ public class AppointmentService
         return ToResponse(appointment);
     }
 
+    public async Task<AppointmentResponse> UpdateNotesAsync(Guid id, Guid businessId, string? notes)
+    {
+        var appointment = await _appointmentRepository.GetByIdAsync(id)
+            ?? throw new NotFoundException($"Appointment with id '{id}' not found.");
+
+        if (appointment.BusinessId != businessId)
+            throw new ForbiddenException("Appointment does not belong to this business.");
+
+        appointment.Notes = notes?.Trim();
+        await _appointmentRepository.SaveChangesAsync();
+
+        return ToResponse(appointment);
+    }
+
     private static AppointmentResponse ToResponse(Appointment a) =>
         new(a.Id, a.BusinessId, a.ServiceId, a.CustomerName, a.CustomerEmail, a.CustomerPhone,
-            a.AppointmentDate, a.DurationMinutes, a.EndTime, a.Status.ToString(), a.CreatedAt);
+            a.AppointmentDate, a.DurationMinutes, a.EndTime, a.Status.ToString(), a.Notes, a.CreatedAt);
 }

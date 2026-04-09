@@ -19,13 +19,33 @@ public class AnalyticsService
     {
         var allAppointments = await _appointmentRepository.GetByBusinessIdAsync(businessId);
         var services = await _serviceRepository.GetByBusinessIdAsync(businessId);
-        var today = DateTime.UtcNow.Date;
+
+        var now = DateTime.UtcNow;
+        var today = now.Date;
+        // Week: Mon-Sun of current week
+        var weekStart = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));
+        var weekEnd = weekStart.AddDays(7);
+        var monthStart = new DateTime(today.Year, today.Month, 1);
+        var monthEnd = monthStart.AddMonths(1);
 
         var cancelled = allAppointments.Count(a => a.Status == AppointmentStatus.Cancelled);
-        // Exclude cancelled from all stats
-        var active = allAppointments.Where(a => a.Status != AppointmentStatus.Cancelled).ToList();
+        var completed = allAppointments.Count(a => a.Status == AppointmentStatus.Completed);
 
-        var todayAppointments = active.Count(a => a.AppointmentDate.Date == today);
+        // "Active" = only Pending or Confirmed
+        var active = allAppointments
+            .Where(a => a.Status == AppointmentStatus.Pending || a.Status == AppointmentStatus.Confirmed)
+            .ToList();
+
+        var todayCount = active.Count(a => a.AppointmentDate.Date == today);
+        var weekCount = active.Count(a => a.AppointmentDate >= weekStart && a.AppointmentDate < weekEnd);
+        var monthCount = active.Count(a => a.AppointmentDate >= monthStart && a.AppointmentDate < monthEnd);
+
+        // Revenue: sum of prices from Completed appointments this month
+        var serviceMap = services.ToDictionary(s => s.Id, s => s.Price ?? 0m);
+        var monthRevenue = allAppointments
+            .Where(a => a.Status == AppointmentStatus.Completed
+                     && a.AppointmentDate >= monthStart && a.AppointmentDate < monthEnd)
+            .Sum(a => serviceMap.TryGetValue(a.ServiceId, out var price) ? price : 0m);
 
         // Top service by appointment count (active only)
         ServiceStat? topService = null;
@@ -56,9 +76,13 @@ public class AnalyticsService
 
         return new DashboardAnalytics(
             active.Count,
-            services.Count,
-            todayAppointments,
+            completed,
             cancelled,
+            todayCount,
+            weekCount,
+            monthCount,
+            services.Count,
+            monthRevenue,
             topService,
             busiestHour,
             quietestHour);

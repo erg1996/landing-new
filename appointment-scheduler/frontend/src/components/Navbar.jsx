@@ -4,8 +4,9 @@ import { useAuth } from './AuthContext'
 const links = [
   { to: '/', label: 'Dashboard', icon: '📊' },
   { to: '/business', label: 'Mi Negocio', icon: '🏪' },
-  { to: '/book', label: 'Reservar Cita', icon: '📅' },
+  { to: '/calendar', label: 'Calendario', icon: '📅' },
   { to: '/appointments', label: 'Citas', icon: '📋' },
+  { to: '/book', label: 'Reservar', icon: '✏️' },
 ]
 
 export default function Navbar() {

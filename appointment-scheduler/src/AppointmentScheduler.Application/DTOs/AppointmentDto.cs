@@ -21,10 +21,14 @@ public record AppointmentResponse(
     int DurationMinutes,
     DateTime EndTime,
     string Status,
+    string? Notes,
     DateTime CreatedAt);
 
 public record UpdateAppointmentStatusRequest(
     [Required, RegularExpression("^(Confirmed|Cancelled|Completed)$")] string Status);
+
+public record UpdateAppointmentNotesRequest(
+    [MaxLength(1000)] string? Notes);
 
 // Pagination
 public record PaginatedResponse<T>(List<T> Items, int Total, int Page, int PageSize);

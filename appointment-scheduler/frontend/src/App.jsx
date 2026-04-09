@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import BusinessPanel from './pages/BusinessPanel'
 import BookAppointment from './pages/BookAppointment'
 import AppointmentsList from './pages/AppointmentsList'
+import CalendarView from './pages/CalendarView'
 import PublicBooking from './pages/PublicBooking'
 import BookingConfirmation from './pages/BookingConfirmation'
 import Login from './pages/Login'
@@ -50,6 +51,7 @@ function Layout() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/business" element={<BusinessPanel />} />
+          <Route path="/calendar" element={<CalendarView />} />
           <Route path="/book" element={<BookAppointment />} />
           <Route path="/appointments" element={<AppointmentsList />} />
         </Routes>

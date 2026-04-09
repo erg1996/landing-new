@@ -37,6 +37,22 @@ public class AppointmentRepository : IAppointmentRepository
             .Where(a => a.BusinessId == businessId && a.AppointmentDate.Date == date.Date)
             .ToListAsync();
 
+    public async Task<List<Appointment>> GetByBusinessIdAndDateRangeAsync(Guid businessId, DateTime from, DateTime to) =>
+        await _context.Appointments
+            .Where(a => a.BusinessId == businessId && a.AppointmentDate >= from && a.AppointmentDate < to)
+            .OrderBy(a => a.AppointmentDate)
+            .ToListAsync();
+
+    // For reminder background service: appointments in [from, to] that haven't been reminded yet
+    public async Task<List<Appointment>> GetUpcomingForRemindersAsync(DateTime from, DateTime to) =>
+        await _context.Appointments
+            .Where(a => a.AppointmentDate >= from
+                     && a.AppointmentDate < to
+                     && !a.ReminderSent
+                     && a.Status != AppointmentStatus.Cancelled
+                     && a.CustomerEmail != null)
+            .ToListAsync();
+
     public async Task AddAsync(Appointment appointment) =>
         await _context.Appointments.AddAsync(appointment);
 

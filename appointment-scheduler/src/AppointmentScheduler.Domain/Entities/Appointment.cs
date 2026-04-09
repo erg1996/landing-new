@@ -19,6 +19,8 @@ public class Appointment
     public DateTime AppointmentDate { get; set; }
     public int DurationMinutes { get; set; }
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Pending;
+    public string? Notes { get; set; }
+    public bool ReminderSent { get; set; }
     public DateTime CreatedAt { get; set; }
 
     public DateTime EndTime => AppointmentDate.AddMinutes(DurationMinutes);

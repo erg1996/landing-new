@@ -1,5 +1,5 @@
 import { useBusiness } from '../components/BusinessContext'
-import { updateAppointmentStatus } from '../api/client'
+import { updateAppointmentStatus, updateAppointmentNotes, downloadReportCsv } from '../api/client'
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 
@@ -14,6 +14,10 @@ export default function AppointmentsList() {
   const { business, appointments, services, refreshAppointments } = useBusiness()
   const [updating, setUpdating] = useState(null)
   const [filter, setFilter] = useState('all')
+  const [editingNotes, setEditingNotes] = useState(null) // appointment id
+  const [notesValue, setNotesValue] = useState('')
+  const [savingNotes, setSavingNotes] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   if (!business) {
     return (
@@ -39,6 +43,32 @@ export default function AppointmentsList() {
       refreshAppointments()
     } catch {}
     setUpdating(null)
+  }
+
+  const startEditNotes = (a) => {
+    setEditingNotes(a.id)
+    setNotesValue(a.notes ?? '')
+  }
+
+  const saveNotes = async (id) => {
+    setSavingNotes(true)
+    try {
+      await updateAppointmentNotes(id, business.id, notesValue)
+      refreshAppointments()
+      setEditingNotes(null)
+    } catch {}
+    setSavingNotes(false)
+  }
+
+  const handleDownloadCsv = async () => {
+    setDownloading(true)
+    try {
+      const now = new Date()
+      const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+      const to = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
+      await downloadReportCsv(business.id, from, to)
+    } catch {}
+    setDownloading(false)
   }
 
   const filtered = filter === 'all' ? appointments : appointments.filter((a) => a.status === filter)
@@ -83,9 +113,18 @@ export default function AppointmentsList() {
           <h1 className="text-2xl font-bold text-gray-800">Citas</h1>
           <p className="text-gray-500 text-sm">{appointments.length} citas registradas</p>
         </div>
-        <button onClick={refreshAppointments} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
-          Actualizar
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleDownloadCsv}
+            disabled={downloading}
+            className="text-sm bg-white border border-gray-200 text-gray-600 hover:text-indigo-600 hover:border-indigo-300 px-3 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+          >
+            {downloading ? 'Descargando...' : 'Exportar CSV'}
+          </button>
+          <button onClick={refreshAppointments} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium px-3 py-2">
+            Actualizar
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -118,19 +157,56 @@ export default function AppointmentsList() {
                 <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">Fecha</th>
                 <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">Hora</th>
                 <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">Estado</th>
+                <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">Notas</th>
                 <th className="text-left px-5 py-3 text-sm font-medium text-gray-500">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {sorted.map((a) => (
-                <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3 text-sm font-medium text-gray-800">{a.customerName}</td>
-                  <td className="px-5 py-3 text-sm text-gray-600">{getServiceName(a.serviceId)}</td>
-                  <td className="px-5 py-3 text-sm text-gray-600">{formatDate(a.appointmentDate)}</td>
-                  <td className="px-5 py-3 text-sm text-gray-600">{formatTime(a.appointmentDate)} — {formatTime(a.endTime)}</td>
-                  <td className="px-5 py-3">{statusBadge(a.status)}</td>
-                  <td className="px-5 py-3">{statusActions(a)}</td>
-                </tr>
+                <>
+                  <tr key={a.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-5 py-3 text-sm font-medium text-gray-800">{a.customerName}</td>
+                    <td className="px-5 py-3 text-sm text-gray-600">{getServiceName(a.serviceId)}</td>
+                    <td className="px-5 py-3 text-sm text-gray-600">{formatDate(a.appointmentDate)}</td>
+                    <td className="px-5 py-3 text-sm text-gray-600">{formatTime(a.appointmentDate)} — {formatTime(a.endTime)}</td>
+                    <td className="px-5 py-3">{statusBadge(a.status)}</td>
+                    <td className="px-5 py-3">
+                      {editingNotes === a.id ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            autoFocus
+                            value={notesValue}
+                            onChange={(e) => setNotesValue(e.target.value)}
+                            placeholder="Agregar nota..."
+                            className="text-xs border border-gray-300 rounded px-2 py-1 w-40 focus:ring-1 focus:ring-indigo-400 outline-none"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveNotes(a.id)
+                              if (e.key === 'Escape') setEditingNotes(null)
+                            }}
+                          />
+                          <button onClick={() => saveNotes(a.id)} disabled={savingNotes}
+                            className="text-xs text-green-600 hover:text-green-800 font-medium">
+                            {savingNotes ? '...' : 'OK'}
+                          </button>
+                          <button onClick={() => setEditingNotes(null)} className="text-xs text-gray-400 hover:text-gray-600">✕</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => startEditNotes(a)}
+                          className="text-xs text-gray-500 hover:text-indigo-600 transition-colors text-left max-w-[150px] truncate block"
+                          title={a.notes ?? 'Agregar nota'}
+                        >
+                          {a.notes ? (
+                            <span className="italic">{a.notes}</span>
+                          ) : (
+                            <span className="text-gray-300 hover:text-indigo-400">+ nota</span>
+                          )}
+                        </button>
+                      )}
+                    </td>
+                    <td className="px-5 py-3">{statusActions(a)}</td>
+                  </tr>
+                </>
               ))}
             </tbody>
           </table>
@@ -145,7 +221,27 @@ export default function AppointmentsList() {
                 </div>
                 <div className="text-sm text-gray-500">{getServiceName(a.serviceId)} · {a.durationMinutes} min</div>
                 <div className="text-sm text-gray-500">{formatDate(a.appointmentDate)} · {formatTime(a.appointmentDate)}</div>
-                <div className="pt-1">{statusActions(a)}</div>
+                {a.notes && <div className="text-xs text-gray-400 italic bg-gray-50 rounded px-2 py-1">{a.notes}</div>}
+                <div className="flex justify-between items-center pt-1">
+                  {statusActions(a)}
+                  <button onClick={() => startEditNotes(a)} className="text-xs text-gray-400 hover:text-indigo-600">
+                    {a.notes ? 'Editar nota' : '+ nota'}
+                  </button>
+                </div>
+                {editingNotes === a.id && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      autoFocus
+                      value={notesValue}
+                      onChange={(e) => setNotesValue(e.target.value)}
+                      placeholder="Nota interna..."
+                      className="flex-1 text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-indigo-400 outline-none"
+                    />
+                    <button onClick={() => saveNotes(a.id)} disabled={savingNotes}
+                      className="text-xs text-green-600 font-medium">{savingNotes ? '...' : 'OK'}</button>
+                    <button onClick={() => setEditingNotes(null)} className="text-xs text-gray-400">✕</button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

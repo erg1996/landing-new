@@ -26,28 +26,32 @@ export default function Dashboard() {
     )
   }
 
-  // Exclude cancelled from frontend counts
-  const active = appointments.filter((a) => a.status !== 'Cancelled')
-  const cancelled = appointments.filter((a) => a.status === 'Cancelled')
-
+  // Fallback local counts (before analytics loads)
   const today = new Date().toISOString().split('T')[0]
+  const active = appointments.filter((a) => a.status === 'Pending' || a.status === 'Confirmed')
+  const completed = appointments.filter((a) => a.status === 'Completed')
+  const cancelled = appointments.filter((a) => a.status === 'Cancelled')
   const todayActive = active.filter((a) => a.appointmentDate.split('T')[0] === today)
-  const upcoming = active
-    .filter((a) => new Date(a.appointmentDate) >= new Date())
-    .sort((a, b) => new Date(a.appointmentDate) - new Date(b.appointmentDate))
-    .slice(0, 5)
 
-  const stats = [
-    { label: 'Servicios Activos', value: services.length, icon: '⚙️', color: 'bg-blue-50 text-blue-700' },
-    { label: 'Citas Activas', value: analytics?.totalAppointments ?? active.length, icon: '📅', color: 'bg-green-50 text-green-700' },
-    { label: 'Citas Hoy', value: analytics?.todayAppointments ?? todayActive.length, icon: '📌', color: 'bg-amber-50 text-amber-700' },
-    { label: 'Canceladas', value: analytics?.cancelledAppointments ?? cancelled.length, icon: '🚫', color: 'bg-red-50 text-red-600' },
+  // Row 1 — temporal metrics
+  const timeStats = [
+    { label: 'Hoy', value: analytics?.todayAppointments ?? todayActive.length, icon: '📌', color: 'bg-amber-50 text-amber-700' },
+    { label: 'Esta Semana', value: analytics?.weekAppointments ?? 0, icon: '📆', color: 'bg-blue-50 text-blue-700' },
+    { label: 'Este Mes', value: analytics?.monthAppointments ?? 0, icon: '🗓', color: 'bg-indigo-50 text-indigo-700' },
+    { label: 'Servicios', value: analytics?.totalServices ?? services.length, icon: '⚙️', color: 'bg-gray-50 text-gray-700' },
   ]
 
-  const formatDateTime = (iso) => {
-    const d = new Date(iso)
-    return d.toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-  }
+  // Row 2 — status & revenue
+  const revenueValue = analytics?.monthRevenue != null
+    ? `$${Number(analytics.monthRevenue).toLocaleString('es', { minimumFractionDigits: 0 })}`
+    : '—'
+
+  const statusStats = [
+    { label: 'Activas', sub: 'Pendientes + Confirmadas', value: analytics?.activeAppointments ?? active.length, icon: '✅', color: 'bg-green-50 text-green-700' },
+    { label: 'Completadas', sub: 'Realizadas', value: analytics?.completedAppointments ?? completed.length, icon: '🏁', color: 'bg-emerald-50 text-emerald-700' },
+    { label: 'Canceladas', sub: 'No realizadas', value: analytics?.cancelledAppointments ?? cancelled.length, icon: '🚫', color: 'bg-red-50 text-red-600' },
+    { label: 'Ingresos mes', sub: 'Citas completadas', value: revenueValue, icon: '💰', color: 'bg-purple-50 text-purple-700' },
+  ]
 
   const formatHour = (hour) => {
     const h = hour % 12 || 12
@@ -55,11 +59,20 @@ export default function Dashboard() {
     return `${h}:00 ${ampm}`
   }
 
+  const formatDateTime = (iso) => {
+    const d = new Date(iso)
+    return d.toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  }
+
   const STATUS_BADGE = {
     Pending: 'bg-yellow-50 text-yellow-700',
     Confirmed: 'bg-blue-50 text-blue-700',
-    Completed: 'bg-green-50 text-green-700',
   }
+
+  const upcoming = active
+    .filter((a) => new Date(a.appointmentDate) >= new Date())
+    .sort((a, b) => new Date(a.appointmentDate) - new Date(b.appointmentDate))
+    .slice(0, 5)
 
   return (
     <div>
@@ -68,8 +81,9 @@ export default function Dashboard() {
         <p className="text-gray-500">Panel de control</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {stats.map((s) => (
+      {/* Row 1 — Temporal */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        {timeStats.map((s) => (
           <div key={s.label} className={`${s.color} rounded-xl p-5 text-center`}>
             <div className="text-2xl mb-1">{s.icon}</div>
             <div className="text-3xl font-bold">{s.value}</div>
@@ -78,11 +92,24 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Row 2 — Status & revenue */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {statusStats.map((s) => (
+          <div key={s.label} className={`${s.color} rounded-xl p-5 text-center`}>
+            <div className="text-2xl mb-1">{s.icon}</div>
+            <div className="text-3xl font-bold">{s.value}</div>
+            <div className="text-sm mt-1 opacity-75">{s.label}</div>
+            <div className="text-xs mt-0.5 opacity-50">{s.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Insights */}
       {analytics && (analytics.topService || analytics.busiestHour || analytics.quietestHour) && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {analytics.topService && (
             <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <div className="text-sm text-gray-500 mb-1">Servicio con mas citas</div>
+              <div className="text-sm text-gray-500 mb-1">Servicio mas agendado</div>
               <div className="text-xl font-bold text-gray-800">{analytics.topService.name}</div>
               <div className="text-sm text-indigo-600 font-medium mt-1">
                 {analytics.topService.count} cita{analytics.topService.count !== 1 ? 's' : ''}
@@ -110,10 +137,11 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Upcoming */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Proximas Citas</h2>
         {upcoming.length === 0 ? (
-          <p className="text-gray-400 text-center py-6">No hay citas proximas</p>
+          <p className="text-gray-400 text-center py-6">No hay citas proximas activas</p>
         ) : (
           <div className="divide-y divide-gray-100">
             {upcoming.map((a) => (
@@ -125,7 +153,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_BADGE[a.status] ?? 'bg-gray-100 text-gray-500'}`}>
-                    {a.status === 'Pending' ? 'Pendiente' : a.status === 'Confirmed' ? 'Confirmada' : a.status}
+                    {a.status === 'Pending' ? 'Pendiente' : 'Confirmada'}
                   </span>
                   <span className="text-sm text-gray-500">{formatDateTime(a.appointmentDate)}</span>
                 </div>

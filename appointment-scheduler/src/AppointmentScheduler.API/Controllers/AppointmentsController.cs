@@ -49,4 +49,14 @@ public class AppointmentsController : ControllerBase
         var result = await _appointmentService.UpdateStatusAsync(id, businessId, request.Status);
         return Ok(result);
     }
+
+    [Authorize]
+    [HttpPatch("{id:guid}/notes")]
+    public async Task<IActionResult> UpdateNotes(Guid id, [FromQuery] Guid businessId, [FromBody] UpdateAppointmentNotesRequest request)
+    {
+        var userId = User.GetUserId();
+        await _businessService.ValidateOwnershipAsync(userId, businessId);
+        var result = await _appointmentService.UpdateNotesAsync(id, businessId, request.Notes);
+        return Ok(result);
+    }
 }
